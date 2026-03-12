@@ -7,8 +7,11 @@ use App\Models\Service;
 use App\Models\Sparepart;
 use App\Models\ServiceSparepart;
 use App\Models\User;
+use App\Services\FonnteService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class ServiceProgress extends Component
 {
@@ -274,7 +277,7 @@ class ServiceProgress extends Component
         } else {
             // Reguler: biaya jasa + sparepart
             $sparepartsCost = $this->noPartsNeeded ? 0 : ServiceSparepart::where('service_id', $this->serviceId)
-                ->sum(\DB::raw('qty * price'));
+                ->sum(DB::raw('qty * price'));
 
             $service->update([
                 'total_cost' => $sparepartsCost + $this->estimatedCost,
@@ -341,30 +344,70 @@ class ServiceProgress extends Component
 
             // Create log
             $service->serviceLogs()->create([
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'status' => $newStatus,
                 'description' => $this->serviceDescription ?: "Status diubah menjadi {$newStatus}",
             ]);
 
-            session()->flash('message', 'Status berhasil diupdate!');
+            $waSent = $this->sendWhatsAppNotification($service->id, false);
+
+            if ($waSent) {
+                session()->flash('message', 'Status berhasil diupdate & notifikasi WhatsApp terkirim otomatis.');
+            } else {
+                session()->flash('message', 'Status berhasil diupdate. Notifikasi WhatsApp belum terkirim (cek konfigurasi Fonnte/token).');
+            }
+
             $this->closeDetail();
             $this->loadServices();
             $this->loadStatusCounts();
         }
     }
 
-    public function sendWhatsAppNotification()
+    public function sendWhatsAppNotification(?int $serviceId = null, bool $flashResult = true): bool
     {
-        if (!$this->selectedService) return;
+        $service = $serviceId
+            ? Service::with(['customer', 'user'])->find($serviceId)
+            : ($this->selectedService ? $this->selectedService->fresh(['customer', 'user']) : null);
 
-        $service  = $this->selectedService->fresh(['customer', 'user']);
-        $customer = $service->customer;
-        $phone    = $customer->phone;
+        if (!$service || !$service->customer || !$service->customer->phone) {
+            if ($flashResult) {
+                session()->flash('error', 'Gagal kirim WhatsApp: data customer/nomor belum lengkap.');
+            }
 
-        // Format phone number (remove leading 0, add 62)
-        if (substr($phone, 0, 1) === '0') {
-            $phone = '62' . substr($phone, 1);
+            return false;
         }
+
+        $message = $this->buildWhatsAppMessage($service);
+
+        try {
+            $result = app(FonnteService::class)->sendMessage($service->customer->phone, $message);
+
+            if ($flashResult) {
+                if ($result['success']) {
+                    session()->flash('message', 'Notifikasi WhatsApp berhasil dikirim.');
+                } else {
+                    session()->flash('error', 'Gagal kirim WhatsApp: ' . ($result['message'] ?? 'Unknown error'));
+                }
+            }
+
+            return (bool) $result['success'];
+        } catch (\Throwable $e) {
+            Log::error('Fonnte send failed', [
+                'service_id' => $service->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($flashResult) {
+                session()->flash('error', 'Gagal kirim WhatsApp: ' . $e->getMessage());
+            }
+
+            return false;
+        }
+    }
+
+    private function buildWhatsAppMessage(Service $service): string
+    {
+        $customer = $service->customer;
 
         $statusLabels = [
             'Pending'          => 'Menunggu Antrian',
@@ -409,9 +452,7 @@ class ServiceProgress extends Component
         $message .= "Terima kasih telah mempercayai layanan *Cellcom*.\n";
         $message .= "Hubungi kami jika ada pertanyaan lebih lanjut. 🙏";
 
-        $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
-
-        $this->dispatch('openWhatsApp', url: $whatsappUrl);
+        return $message;
     }
 
     public function getStatusColor($status)
