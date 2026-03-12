@@ -141,6 +141,7 @@ class ServiceProgress extends Component
             $this->status          = $this->selectedService->status;
             $this->userId          = $this->selectedService->user_id;
             $this->diagnosisResult = $this->selectedService->diagnosis_result;
+            $this->additionalFindings = $this->selectedService->recommendation;
             $this->rmaNumber       = $this->selectedService->rma_number;
             $this->estimatedCost   = $this->selectedService->estimated_cost;
             $this->totalCost       = $this->selectedService->total_cost;
@@ -323,6 +324,7 @@ class ServiceProgress extends Component
                 'status'           => $newStatus,
                 'user_id'          => $this->userId,
                 'diagnosis_result' => $this->diagnosisResult,
+                'recommendation'   => $this->additionalFindings,
                 'estimated_cost'   => $this->estimatedCost,
                 'rma_number'       => $this->rmaNumber,
                 'completed_at'     => $completedAt,
@@ -355,30 +357,57 @@ class ServiceProgress extends Component
     {
         if (!$this->selectedService) return;
 
-        $customer = $this->selectedService->customer;
-        $phone = $customer->phone;
+        $service  = $this->selectedService->fresh(['customer', 'user']);
+        $customer = $service->customer;
+        $phone    = $customer->phone;
 
         // Format phone number (remove leading 0, add 62)
         if (substr($phone, 0, 1) === '0') {
             $phone = '62' . substr($phone, 1);
         }
 
-        $message = "*CELLCOM SERVICE CENTER*\n\n";
-        $message .= "Halo {$customer->name},\n\n";
-        $message .= "Update servis Anda:\n";
-        $message .= "Tiket: {$this->selectedService->ticket_number}\n";
-        $message .= "Device: {$this->selectedService->device_name}\n";
-        $message .= "Status: {$this->selectedService->status}\n\n";
+        $statusLabels = [
+            'Pending'          => 'Menunggu Antrian',
+            'Diagnosis'        => 'Sedang Didiagnosa',
+            'In Progress'      => 'Sedang Diperbaiki',
+            'Waiting Part'     => 'Menunggu Spare Part',
+            'Waiting Approval' => 'Menunggu Persetujuan',
+            'Done'             => 'Selesai — Siap Diambil',
+            'Taken'            => 'Sudah Diambil',
+        ];
+        $statusLabel = $statusLabels[$service->status] ?? $service->status;
+        $teknisiName = $service->user ? $service->user->name : 'Belum ditentukan';
 
-        if ($this->selectedService->diagnosis_result) {
-            $message .= "Diagnosa:\n{$this->selectedService->diagnosis_result}\n\n";
+        $message  = "*🔧 CELLCOM SERVICE CENTER*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━\n\n";
+        $message .= "Halo *{$customer->name}*,\n\n";
+        $message .= "Berikut update terbaru servis perangkat Anda:\n\n";
+
+        $message .= "📋 *Informasi Servis*\n";
+        $message .= "• Nomor Tiket : *{$service->ticket_number}*\n";
+        $message .= "• Perangkat   : {$service->device_name}\n";
+        $message .= "• Teknisi     : {$teknisiName}\n";
+        $message .= "• Status      : *{$statusLabel}*\n\n";
+
+        if ($service->diagnosis_result) {
+            $message .= "🔍 *Hasil Diagnosis*\n";
+            $message .= "{$service->diagnosis_result}\n\n";
         }
 
-        if ($this->selectedService->total_cost > 0) {
-            $message .= "Total Biaya: Rp " . number_format($this->selectedService->total_cost, 0, ',', '.') . "\n\n";
+        if ($service->recommendation) {
+            $message .= "💡 *Rekomendasi / Solusi*\n";
+            $message .= "{$service->recommendation}\n\n";
         }
 
-        $message .= "Terima kasih telah mempercayai layanan kami.";
+        if ($service->total_cost > 0) {
+            $message .= "💰 *Estimasi Biaya*\n";
+            $message .= "Rp " . number_format($service->total_cost, 0, ',', '.') . "\n";
+            $message .= "_*Biaya dapat berubah sesuai kondisi aktual perangkat._\n\n";
+        }
+
+        $message .= "━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "Terima kasih telah mempercayai layanan *Cellcom*.\n";
+        $message .= "Hubungi kami jika ada pertanyaan lebih lanjut. 🙏";
 
         $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
 

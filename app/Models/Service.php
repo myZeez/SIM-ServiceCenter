@@ -22,6 +22,7 @@ class Service extends Model
         'complaint',
         'status',
         'diagnosis_result',
+        'recommendation',
         'estimated_cost',
         'total_cost',
         'service_cost',
