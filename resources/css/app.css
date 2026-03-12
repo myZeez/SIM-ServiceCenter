@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Custom Scrollbar ===== */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 4px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #374151;
+}
+
+/* Main scrollable area */
+main::-webkit-scrollbar {
+    width: 6px;
+}
+main::-webkit-scrollbar-track {
+    background: transparent;
+}
+main::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 6px;
+}
+.dark main::-webkit-scrollbar-thumb {
+    background: #374151;
+}
+
+/* ===== Page Header (inside topbar) ===== */
+.page-header-title {
+    @apply text-base font-bold text-gray-900 dark:text-white leading-none;
+}
+.page-header-subtitle {
+    @apply text-xs text-gray-400 dark:text-gray-500 mt-0.5;
+}
+
+/* ===== Card base ===== */
+.card {
+    @apply bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm;
+}
+
+/* ===== Stat badge ===== */
+.stat-icon-wrap {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0;
+}

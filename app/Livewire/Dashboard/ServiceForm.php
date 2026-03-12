@@ -1,0 +1,226 @@
+<?php
+
+namespace App\Livewire\Dashboard;
+
+use App\Models\Booking;
+use App\Models\Customer;
+use App\Models\Service;
+use App\Models\User;
+use Livewire\Component;
+use Illuminate\Support\Str;
+
+class ServiceForm extends Component
+{
+    // Customer fields
+    public $search = '';
+    public $selectedCustomer = null;
+    public $customerId = null;
+    public $customerName = '';
+    public $customerPhone = '';
+    public $customerAddress = '';
+    public $showCustomerResults = false;
+    public $customerResults = [];
+    public $bookingResults = [];
+
+    // Service fields
+    public $deviceName = '';
+    public $serialNumber = '';
+    public $complaint = '';
+    public $serviceType = 'REGULER';
+    public $rmaNumber = '';
+
+    // Selected booking data
+    public $selectedBookingId = null;
+
+    // Confirmation modal
+    public $showConfirmModal = false;
+    public $savedTicketNumber = '';
+
+    protected $rules = [
+        'customerName' => 'required|string|max:255',
+        'customerPhone' => 'required|string|max:20',
+        'customerAddress' => 'nullable|string',
+        'deviceName' => 'required|string|max:255',
+        'complaint' => 'required|string',
+        'serviceType' => 'required|in:REGULER,AUTHORIZED',
+    ];
+
+    public function updatedSearch($value)
+    {
+        if (strlen($value) >= 2) {
+            // Search from Booking table (priority - from Expert System diagnosis)
+            $this->bookingResults = Booking::where('status', 'pending')
+                ->where(function ($query) use ($value) {
+                    $query->where('name', 'like', '%' . $value . '%')
+                        ->orWhere('phone', 'like', '%' . $value . '%')
+                        ->orWhere('booking_code', 'like', '%' . $value . '%');
+                })
+                ->whereDate('created_at', '>=', now()->subWeek()) // Only bookings within 1 week
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            // Also search from Customer table
+            $this->customerResults = Customer::where('name', 'like', '%' . $value . '%')
+                ->orWhere('phone', 'like', '%' . $value . '%')
+                ->limit(5)
+                ->get();
+
+            $this->showCustomerResults = true;
+        } else {
+            $this->showCustomerResults = false;
+            $this->customerResults = [];
+            $this->bookingResults = [];
+        }
+    }
+
+    public function selectBooking($bookingId)
+    {
+        $booking = Booking::find($bookingId);
+        if ($booking) {
+            $this->selectedBookingId = $booking->id;
+            $this->customerName = $booking->name;
+            $this->customerPhone = $booking->phone;
+            $this->customerAddress = $booking->address;
+            $this->deviceName = $booking->device_brand . ' ' . $booking->device_name;
+            $this->serialNumber = $booking->serial_number ?? '';
+            $this->complaint = $booking->complaint;
+            $this->search = $booking->name . ' (' . $booking->booking_code . ')';
+            $this->showCustomerResults = false;
+
+            // Check if customer already exists by phone
+            $existingCustomer = Customer::where('phone', $booking->phone)->first();
+            if ($existingCustomer) {
+                $this->customerId = $existingCustomer->id;
+            }
+        }
+    }
+
+    public function selectCustomer($customerId)
+    {
+        $customer = Customer::find($customerId);
+        if ($customer) {
+            $this->customerId = $customer->id;
+            $this->customerName = $customer->name;
+            $this->customerPhone = $customer->phone;
+            $this->customerAddress = $customer->address;
+            $this->search = $customer->name;
+            $this->showCustomerResults = false;
+        }
+    }
+
+    public function clearCustomer()
+    {
+        $this->reset(['customerId', 'customerName', 'customerPhone', 'customerAddress', 'search', 'selectedBookingId', 'deviceName', 'serialNumber', 'complaint']);
+    }
+
+    public function openConfirmation()
+    {
+        try {
+            $this->validate();
+            $this->showConfirmModal = true;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation failed - errors will be shown in blade
+            throw $e;
+        }
+    }
+
+    public function cancelSave()
+    {
+        $this->showConfirmModal = false;
+    }
+
+    public function saveAndPrint()
+    {
+        \Log::info('saveAndPrint called');
+        $serviceId = $this->performSave();
+        \Log::info('Service ID after save: ' . $serviceId);
+        if ($serviceId) {
+            $this->dispatch('openPrintPage', serviceId: $serviceId);
+        }
+    }
+
+    public function save()
+    {
+        \Log::info('save called');
+        $this->performSave();
+    }
+
+    private function performSave()
+    {
+        try {
+            $this->validate();
+
+            // Create or update customer
+        if ($this->customerId) {
+            $customer = Customer::find($this->customerId);
+            $customer->update([
+                'name' => $this->customerName,
+                'phone' => $this->customerPhone,
+                'address' => $this->customerAddress,
+            ]);
+        } else {
+            $customer = Customer::create([
+                'name' => $this->customerName,
+                'phone' => $this->customerPhone,
+                'address' => $this->customerAddress,
+            ]);
+        }
+
+        // Generate ticket number
+        $ticketNumber = 'SRV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+
+        // Create service
+        $service = Service::create([
+            'ticket_number' => $ticketNumber,
+            'customer_id' => $customer->id,
+            'user_id' => null, // Will be assigned later by admin
+            'service_type' => $this->serviceType,
+            'rma_number' => $this->serviceType === 'AUTHORIZED' ? $this->rmaNumber : null,
+            'device_name' => $this->deviceName,
+            'serial_number' => $this->serialNumber,
+            'complaint' => $this->complaint,
+            'status' => 'Pending',
+            'estimated_cost' => 0,
+            'total_cost' => 0,
+        ]);
+
+        // Create log
+        $service->serviceLogs()->create([
+            'user_id' => auth()->id(),
+            'status' => 'Pending',
+            'description' => 'Servis baru diterima / dibuat',
+        ]);
+
+        // Mark booking as confirmed if selected from booking
+        if ($this->selectedBookingId) {
+            Booking::where('id', $this->selectedBookingId)->update([
+                'status' => 'confirmed',
+            ]);
+        }
+
+        $this->savedTicketNumber = $ticketNumber;
+        $this->showConfirmModal = false;
+
+        session()->flash('message', 'Service created successfully! Ticket: ' . $ticketNumber);
+
+        // Reset form
+        $this->reset(['deviceName', 'serialNumber', 'complaint', 'serviceType', 'rmaNumber', 'selectedBookingId']);
+
+        // Emit event to refresh today's services
+        $this->dispatch('serviceCreated');
+
+            return $service->id;
+        } catch (\Exception $e) {
+            $this->showConfirmModal = false;
+            session()->flash('error', 'Error: ' . $e->getMessage());
+            \Log::error('Service creation error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function render()
+    {
+        return view('livewire.dashboard.service-form');
+    }
+}
