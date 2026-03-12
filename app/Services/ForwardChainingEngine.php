@@ -389,6 +389,7 @@ class ForwardChainingEngine
 
         // Jalankan Forward Chaining dengan filter device_type
         $results = Rule::forwardChain($symptomIds, $this->deviceType);
+        $rawResults = $results;
 
         if (empty($results)) {
             return $this->getFallbackDiagnosis();
@@ -401,7 +402,11 @@ class ForwardChainingEngine
         usort($results, fn($a, $b) => $b['cf_combined'] <=> $a['cf_combined']);
 
         // Filter hasil dengan CF terlalu rendah setelah penalti
-        $results = array_filter($results, fn($r) => $r['cf_combined'] >= 0.1);
+        $results = array_values(array_filter($results, fn($r) => $r['cf_combined'] >= 0.1));
+
+        if (empty($results)) {
+            return $this->getFallbackDiagnosis($rawResults);
+        }
 
         // Format hasil diagnosis
         $diagnoses = [];
@@ -476,8 +481,56 @@ class ForwardChainingEngine
     /**
      * Fallback diagnosis jika tidak ada rule yang cocok
      */
-    private function getFallbackDiagnosis(): array
+    private function getFallbackDiagnosis(array $candidateResults = []): array
     {
+        if (!empty($candidateResults)) {
+            usort($candidateResults, fn($a, $b) => $b['cf_combined'] <=> $a['cf_combined']);
+
+            $diagnoses = [];
+            foreach (array_slice($candidateResults, 0, 3) as $result) {
+                $disease = $result['disease'] ?? null;
+                if (!$disease) {
+                    continue;
+                }
+
+                $matchedSymptomNames = $this->facts
+                    ->whereIn('id', $result['matched_symptoms'] ?? [])
+                    ->pluck('name')
+                    ->toArray();
+
+                $diagnoses[] = [
+                    'code' => $disease->code,
+                    'name' => $disease->name,
+                    'description' => $disease->description,
+                    'category' => $disease->category,
+                    'solution' => $disease->solution,
+                    'actions' => $disease->actions ?? [],
+                    'level' => $disease->level,
+                    'level_color' => $disease->level_color ?? null,
+                    'cost_range' => $disease->cost_range,
+                    'min_cost' => $disease->min_cost ?? null,
+                    'max_cost' => $disease->max_cost ?? null,
+                    'confidence' => max(15, min(49, round(($result['cf_combined'] ?? 0) * 100))),
+                    'match_percentage' => $result['match_percentage'] ?? 0,
+                    'matched_symptoms' => $matchedSymptomNames,
+                    'penalized' => true,
+                    'low_confidence_fallback' => true,
+                ];
+            }
+
+            if (!empty($diagnoses)) {
+                return [
+                    'status' => 'partial',
+                    'message' => 'Diagnosis spesifik belum cukup kuat. Sistem menampilkan kandidat terdekat berdasarkan gejala yang cocok.',
+                    'detected_symptoms' => $this->facts->pluck('name')->toArray(),
+                    'symptom_codes' => $this->facts->pluck('code')->toArray(),
+                    'category' => $this->currentCategory,
+                    'diagnoses' => $diagnoses,
+                    'total_rules_matched' => count($candidateResults),
+                ];
+            }
+        }
+
         $categories = $this->facts->pluck('category')->unique();
 
         $diseases = Disease::where('device_type', $this->deviceType)
