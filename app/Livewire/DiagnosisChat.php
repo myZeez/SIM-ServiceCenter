@@ -60,6 +60,7 @@ class DiagnosisChat extends Component
     public ?string $selectedServiceCategory = null;
     public ?string $selectedServiceKey = null;
     public ?array $selectedServiceData = null;
+    public array $selectedServiceItems = [];
 
     // Booking form
     public array $bookingForm = [
@@ -959,9 +960,16 @@ class DiagnosisChat extends Component
         $serviceLabel = $this->selectedServiceData['label'] ?? '';
         $servicePrice = $this->selectedServiceData['price'] ?? '';
 
-        $complaint = "[Tanya Dulu] {$serviceLabel} ({$servicePrice})";
+                $complaint = "[Tanya Dulu] {$serviceLabel}";
+        
+        if (!empty($this->selectedServiceItems)) {
+            $complaint .= "\nLayanan Dipilih:\n- " . implode("\n- ", $this->selectedServiceItems);
+        } else {
+            $complaint .= " ({$servicePrice})";
+        }
+        
         if (!empty($this->bookingForm['notes'])) {
-            $complaint .= "\nCatatan: " . $this->bookingForm['notes'];
+            $complaint .= "\n\nKeluhan/Layanan Tambahan: " . $this->bookingForm['notes'];
         }
 
         $booking = Booking::create([
@@ -978,6 +986,7 @@ class DiagnosisChat extends Component
                 'type' => 'service_inquiry',
                 'category' => $this->selectedServiceCategory,
                 'service' => $this->selectedServiceKey,
+                'service_items' => $this->selectedServiceItems,
                 'service_label' => $serviceLabel,
                 'price' => $servicePrice,
             ],
@@ -997,7 +1006,7 @@ class DiagnosisChat extends Component
     {
         $componentSlug = $this->selectedDeviceType . '_' . $key;
         $component = \App\Models\DeviceComponent::where('slug', $componentSlug)->first();
-        
+
         if (!$component) {
             $componentSlug = $this->selectedDeviceType . '-' . $key;
             $component = \App\Models\DeviceComponent::where('slug', $componentSlug)->first();
@@ -1006,7 +1015,7 @@ class DiagnosisChat extends Component
         if (!$component) {
             $component = \App\Models\DeviceComponent::where('slug', $key)->first();
         }
-        
+
         if (!$component) {
             // Backup for legacy fallback if reading from config arrays
             $component = ['slug' => $key];
