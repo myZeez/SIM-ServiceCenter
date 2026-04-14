@@ -901,10 +901,10 @@ class DiagnosisChat extends Component
      */
         public function selectDevice($type): void
     {
-        $device = \App\Models\DeviceType::find($type);
+        $device = \App\Models\DeviceType::where('slug', $type)->first() ?? \App\Models\DeviceType::find($type);
         if (!$device) return;
 
-        $this->selectedDeviceType = $type;
+        $this->selectedDeviceType = $device->slug;
         $this->state = 'select_category';
     }
 
