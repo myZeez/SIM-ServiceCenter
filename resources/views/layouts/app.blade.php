@@ -173,20 +173,36 @@
                         <span x-show="!sidebarCollapsed" x-transition:enter="transition-opacity duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="whitespace-nowrap">Laporan Bulanan</span>
                         <span x-show="sidebarCollapsed" class="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-50 shadow-lg">Laporan Bulanan</span>
                     </a>
-                    @endif                </nav>
 
-                {{-- User Profile (Bottom) -> Changed to direct logout for Super Admin --}}
+                    {{-- Section: Sistem Pakar --}}
+                    <div x-show="!sidebarCollapsed" class="px-3 pt-5 pb-1.5">
+                        <span class="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Sistem Pakar</span>
+                    </div>
+                    <div x-show="sidebarCollapsed" class="my-3 mx-1 border-t border-gray-100 dark:border-gray-800"></div>
+
+                    <a href="{{ route('expert-system.devices') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative
+                            {{ request()->routeIs('expert-system.*')
+                                ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white' }}">
+                        <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('expert-system.*') ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        <span x-show="!sidebarCollapsed" x-transition:enter="transition-opacity duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="whitespace-nowrap">Basis Pengetahuan</span>
+                        <span x-show="sidebarCollapsed" class="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-50 shadow-lg">Basis Pengetahuan</span>
+                    </a>
+                    @endif                </nav>
                 <div class="border-t border-gray-100 dark:border-gray-800 p-2 flex-shrink-0 relative">
                     <form method="POST" action="{{ Auth::user()->role === 'super_admin' ? route('super-admin.logout') : route('logout') }}">
                         @csrf
                         <button type="submit"
                             title="Log Out"
                             class="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-500 transition-colors group">
-                            
+
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
-                            
+
                             <span x-show="!sidebarCollapsed"
                                 x-transition:enter="transition-opacity duration-200"
                                 x-transition:enter-start="opacity-0"
@@ -194,7 +210,7 @@
                                 class="text-sm font-semibold whitespace-nowrap">
                                 Log Out
                             </span>
-                            
+
                             {{-- Tooltip for collapsed mode --}}
                             <span x-show="sidebarCollapsed" class="absolute left-full ml-3 px-2 py-1 bg-red-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-50 shadow-lg">Log Out</span>
                         </button>
@@ -372,6 +388,11 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         Laporan Bulanan
                     </a>
+                    <div class="px-3 pt-4 pb-1"><span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sistem Pakar</span></div>
+                    <a href="{{ route('expert-system.devices') }}" @click="mobileOpen = false" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {{ request()->routeIs('expert-system.*') ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Basis Pengetahuan
+                    </a>                    
                       @endif                </nav>
                 <div class="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
                     <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ Auth::user()->name }}</p>
