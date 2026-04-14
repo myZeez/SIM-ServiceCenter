@@ -149,7 +149,6 @@ class DeviceMasterDataSeeder extends Seeder
                     ServiceCategory::updateOrCreate(
                         ['slug' => $cat['slug']],
                         [
-                            'device_component_id' => $component->id,
                             'name' => $cat['name']
                         ]
                     );
