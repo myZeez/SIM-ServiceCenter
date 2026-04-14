@@ -32,6 +32,12 @@ class ServiceForm extends Component
     // Selected booking data
     public $selectedBookingId = null;
 
+    // Service Selection fields
+    public $selectedServiceCategoryId = null;
+    public $selectedServiceItems = [];
+    public $availableCategories = [];
+    public $availableServicesData = [];
+
     // Confirmation modal
     public $showConfirmModal = false;
     public $savedTicketNumber = '';
@@ -41,9 +47,29 @@ class ServiceForm extends Component
         'customerPhone' => 'required|string|max:20',
         'customerAddress' => 'nullable|string',
         'deviceName' => 'required|string|max:255',
-        'complaint' => 'required|string',
+        'complaint' => 'nullable|string',
         'serviceType' => 'required|in:REGULER,AUTHORIZED',
     ];
+
+    public function mount()
+    {
+        $this->availableCategories = \App\Models\ServiceCategory::where('is_active', true)->orderBy('order_column')->get();
+    }
+
+    public function updatedSelectedServiceCategoryId($value)
+    {
+        $this->selectedServiceItems = [];
+        if ($value) {
+            $category = $this->availableCategories->firstWhere('id', $value);
+            if ($category && $category->services_data) {
+                $this->availableServicesData = is_string($category->services_data) ? json_decode($category->services_data, true) : $category->services_data;
+            } else {
+                $this->availableServicesData = [];
+            }
+        } else {
+            $this->availableServicesData = [];
+        }
+    }
 
     public function updatedSearch($value)
     {
@@ -151,6 +177,12 @@ class ServiceForm extends Component
         try {
             $this->validate();
 
+            if (empty($this->complaint) && empty($this->selectedServiceItems)) {
+                $this->addError('complaint', 'Keluhan atau Pilihan Layanan harus diisi');
+                $this->showConfirmModal = false;
+                return null;
+            }
+
             // Create or update customer
         if ($this->customerId) {
             $customer = Customer::find($this->customerId);
@@ -170,6 +202,12 @@ class ServiceForm extends Component
         // Generate ticket number
         $ticketNumber = 'SRV-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
 
+        $finalComplaint = $this->complaint;
+        if (!empty($this->selectedServiceItems)) {
+            $prefix = "Layanan Dipilih:\n- " . implode("\n- ", $this->selectedServiceItems);
+            $finalComplaint = $prefix . ($finalComplaint ? "\n\nKeluhan Tambahan: " . $finalComplaint : "");
+        }
+
         // Create service
         $service = Service::create([
             'ticket_number' => $ticketNumber,
@@ -179,7 +217,7 @@ class ServiceForm extends Component
             'rma_number' => $this->serviceType === 'AUTHORIZED' ? $this->rmaNumber : null,
             'device_name' => $this->deviceName,
             'serial_number' => $this->serialNumber,
-            'complaint' => $this->complaint,
+            'complaint' => $finalComplaint ?: '-',
             'status' => 'Pending',
             'estimated_cost' => 0,
             'total_cost' => 0,
@@ -205,7 +243,7 @@ class ServiceForm extends Component
         session()->flash('message', 'Service created successfully! Ticket: ' . $ticketNumber);
 
         // Reset form
-        $this->reset(['deviceName', 'serialNumber', 'complaint', 'serviceType', 'rmaNumber', 'selectedBookingId']);
+        $this->reset(['deviceName', 'serialNumber', 'complaint', 'serviceType', 'rmaNumber', 'selectedBookingId', 'selectedServiceCategoryId', 'selectedServiceItems', 'availableServicesData']);
 
         // Emit event to refresh today's services
         $this->dispatch('serviceCreated');

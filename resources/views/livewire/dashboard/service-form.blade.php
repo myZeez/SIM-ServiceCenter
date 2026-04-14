@@ -219,16 +219,43 @@
                 >
             </div>
 
+            <!-- Service Packages -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Keluhan <span class="text-red-500">*</span>
+                    Pilihan Paket Layanan (Opsional)
+                </label>
+                <select wire:model.live="selectedServiceCategoryId" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 mb-3">
+                    <option value="">-- Pilih Kategori Layanan --</option>
+                    @foreach($availableCategories as $cat)
+                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+
+                @if(!empty($availableServicesData))
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 mb-3">
+                        @foreach($availableServicesData as $sKey => $svc)
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            <input type="checkbox" wire:model="selectedServiceItems" value="{{ $svc['label'] ?? '' }} ({{ $svc['price'] ?? '' }})" class="mt-1 w-4 h-4 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $svc['label'] ?? '' }}</div>
+                                <div class="text-xs text-primary-600 dark:text-primary-400 font-semibold">{{ $svc['price'] ?? '' }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $svc['desc'] ?? '' }}</div>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Keluhan / Catatan Tambahan <span class="text-gray-500 font-normal text-xs ml-1">(Isi manual jika tidak ada di paket)</span>
                 </label>
                 <textarea
                     wire:model="complaint"
                     rows="3"
                     placeholder="Jelaskan keluhan atau masalah perangkat..."
                     class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    required
                 ></textarea>
                 @error('complaint') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
             </div>
