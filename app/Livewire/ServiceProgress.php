@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Brand;
 use App\Models\Service;
 use App\Models\Sparepart;
+use App\Models\ServiceCategory;
 use App\Models\ServiceSparepart;
 use App\Models\User;
 use App\Services\FonnteService;
@@ -32,6 +33,12 @@ class ServiceProgress extends Component
     public $rmaNumber; // Added RMA Number
     public $estimatedCost = 0;
     public $totalCost = 0;
+
+    // Service Packages fields
+    public $selectedServiceCategoryId = null;
+    public $selectedServiceItems = [];
+    public $availableCategories = [];
+    public $availableServicesData = [];
 
     // Sparepart fields
     public $sparepartId;
@@ -64,6 +71,47 @@ class ServiceProgress extends Component
         'estimatedCost' => 'nullable|numeric|min:0',
         'totalCost' => 'nullable|numeric|min:0',
     ];
+
+        public function updatedSelectedServiceCategoryId($value)
+    {
+        if ($value) {
+            $category = $this->availableCategories->firstWhere('id', $value);
+            if ($category && $category->services_data) {
+                $this->availableServicesData = is_string($category->services_data) ? json_decode($category->services_data, true) : $category->services_data;
+            } else {
+                $this->availableServicesData = [];
+            }
+        } else {
+            $this->availableServicesData = [];
+        }
+    }
+
+    public function updatedSelectedServiceItems()
+    {
+        $this->calculateServiceCost();
+    }
+
+    public function calculateServiceCost()
+    {
+        $cost = 0;
+        foreach ($this->selectedServiceItems as $itemStr) {
+            if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
+                $price = (int)preg_replace('/[^0-9]/', '', $matches[2]);
+                $cost += $price;
+            }
+        }
+        $this->estimatedCost = $cost;
+        $this->calculateTotalCost();
+        
+        // Save automatically back to service cost
+        if ($this->selectedService) {
+            $this->selectedService->update([
+                'service_items' => $this->selectedServiceItems,
+                'service_cost'  => $cost
+            ]);
+            $this->calculateTotalCost(); // to trigger total_cost update in DB
+        }
+    }
 
     public function updatedEstimatedCost()
     {
@@ -147,6 +195,8 @@ class ServiceProgress extends Component
             $this->additionalFindings = $this->selectedService->recommendation;
             $this->rmaNumber       = $this->selectedService->rma_number;
             $this->estimatedCost   = $this->selectedService->estimated_cost;
+            $this->selectedServiceItems = $this->selectedService->service_items ?? [];
+            $this->availableCategories = ServiceCategory::where('is_active', true)->orderBy('order_column')->get();
             $this->totalCost       = $this->selectedService->total_cost;
             $this->selectedSpareparts = $this->selectedService->serviceSpareparts->toArray();
             $this->noPartsNeeded   = false;

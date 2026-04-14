@@ -266,6 +266,7 @@ class ServiceForm extends Component
             'serial_number' => $this->serialNumber,
             'complaint' => $finalComplaint ?: '-',
             'status' => 'Pending',
+            'service_items' => $this->selectedServiceItems,
             'estimated_cost' => 0,
             'total_cost' => 0,
         ]);

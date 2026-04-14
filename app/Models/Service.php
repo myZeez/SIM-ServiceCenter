@@ -22,6 +22,7 @@ class Service extends Model
         'complaint',
         'status',
         'diagnosis_result',
+        'service_items',
         'recommendation',
         'estimated_cost',
         'total_cost',
@@ -32,6 +33,7 @@ class Service extends Model
     ];
 
     protected $casts = [
+        'service_items'     => 'array',
         'estimated_cost'    => 'decimal:2',
         'total_cost'        => 'decimal:2',
         'service_cost'      => 'decimal:2',
