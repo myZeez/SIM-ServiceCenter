@@ -1,81 +1,16 @@
 <?php
 
-namespace App\Livewire;
+namespace Database\Seeders;
 
-use App\Models\Booking;
-use App\Models\Symptom;
-use App\Services\BackwardChainingEngine;
-use App\Services\ForwardChainingEngine;
-use Livewire\Component;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\DeviceType;
+use App\Models\DeviceComponent;
+use App\Models\ServiceCategory;
+use Illuminate\Support\Str;
 
-/**
- * DiagnosisChat Component - Sistem Pakar Diagnosis Multi-Device
- *
- * UI berbasis wizard step-by-step:
- * 1. User pilih jenis perangkat (Laptop, PC/AIO, Printer)
- * 2. User pilih kategori masalah
- * 3. User pilih sub-masalah spesifik
- * 4. Sistem ajukan pertanyaan lanjutan (Ya/Tidak)
- * 5. Jalankan inferensi Forward Chaining
- * 6. Tampilkan hasil diagnosis
- * 7. Booking servis (opsional)
- */
-class DiagnosisChat extends Component
+class DiagnosisChatDataSeeder extends Seeder
 {
-    // ===========================
-    // STATE
-    // ===========================
-    public string $state = 'select_device';
-    // States: select_device → select_category → select_problem → asking → verifying → diagnosed → booking → completed
-    // Service inquiry: select_device → service_inquiry → service_detail → service_booking → completed
-
-    public ?string $selectedDeviceType = null;
-    public ?string $selectedCategoryKey = null;
-    public ?string $selectedProblemKey = null;
-
-    // Diagnosis data
-    public array $collectedSymptoms = [];
-    public ?array $diagnosisResult = null;
-    public ?array $currentQuestion = null;
-    public int $questionCount = 0;
-    public int $maxQuestions = 3;
-    public array $answeredQuestions = [];
-
-    // Engine state (serialized for Livewire lifecycle)
-    public array $engineState = [];
-
-    // Backward Chaining state (one-shot checklist mode)
-    public array $bcEngineState = [];
-    public array $bcQuestions = [];             // All verification questions (displayed as checklist)
-    public array $bcChecklist = [];             // User's checklist answers: symptom_id => bool
-    public array $bcAnsweredQuestions = [];     // Log of answered BC questions
-    public ?array $fcDiagnosisResult = null;    // FC result sebelum verifikasi BC
-    public bool $bcVerified = false;            // Flag apakah sudah melalui BC
-
-    // Direct diagnosis config (for exception cases)
-    public array $directDiagnosisConfig = [];   // Active direct diagnosis config
-    public bool $skipBcVerification = false;    // Skip backward chaining flag
-
-    // Service inquiry (Tanya Dulu)
-    public ?string $selectedServiceCategory = null;
-    public ?string $selectedServiceKey = null;
-    public ?array $selectedServiceData = null;
-
-    // Booking form
-    public array $bookingForm = [
-        'name' => '',
-        'phone' => '',
-        'email' => '',
-        'laptop_brand' => '',
-        'laptop_type' => '',
-        'notes' => '',
-    ];
-    public string $bookingCode = '';
-    public bool $bookingSuccess = false;
-
-    // ===========================
-    // CATEGORY DEFINITIONS PER DEVICE TYPE
-    // ===========================
     private const DEVICE_TYPES = [
         'laptop' => ['label' => 'Laptop', 'icon' => '💻', 'desc' => 'Laptop, Notebook, Ultrabook'],
         'pc' => ['label' => 'PC Desktop', 'icon' => '🖥️', 'desc' => 'PC Rakitan, Tower, Desktop'],
@@ -83,8 +18,7 @@ class DiagnosisChat extends Component
         'printer' => ['label' => 'Printer', 'icon' => '🖨️', 'desc' => 'Inkjet, Laser, MFP/Scanner'],
     ];
 
-    // Kategori untuk Laptop (keluhan-based)
-    private const LAPTOP_CATEGORIES = [
+private const LAPTOP_CATEGORIES = [
         'layar' => [
             'label' => 'Layar',
             'icon' => '🖥️',
@@ -215,11 +149,7 @@ class DiagnosisChat extends Component
         ],
     ];
 
-    // Kategori untuk PC Desktop
-    // Kategori untuk PC Desktop (Custom Build)
-    // PC Desktop: tower, komponen ATX, PSU box, TIDAK punya monitor bawaan
-    // Kode symptom: PCG, Kode penyakit: PCK, Kode pertanyaan: PCQ
-    private const PC_CATEGORIES = [
+private const PC_CATEGORIES = [
         'daya' => [
             'label' => 'Mati / Daya',
             'icon' => '🔌',
@@ -309,9 +239,7 @@ class DiagnosisChat extends Component
         ],
     ];
 
-    // Kategori untuk AIO (All-in-One)
-    // AIO: monitor & PC jadi satu, punya LCD bawaan, komponen compact (SO-DIMM, 2.5"), pakai ADAPTOR EKSTERNAL
-    private const AIO_CATEGORIES = [
+private const AIO_CATEGORIES = [
         'daya' => [
             'label' => 'Mati / Daya',
             'icon' => '🔌',
@@ -402,8 +330,7 @@ class DiagnosisChat extends Component
         ],
     ];
 
-    // Kategori untuk Printer
-    private const PRINTER_CATEGORIES = [
+private const PRINTER_CATEGORIES = [
         'kualitas' => [
             'label' => 'Kualitas Cetak',
             'icon' => '📄',
@@ -501,110 +428,7 @@ class DiagnosisChat extends Component
         ],
     ];
 
-    /**
-     * Konfigurasi diagnosis langsung / pengecualian pertanyaan
-     *
-     * Beberapa gejala sudah cukup jelas sehingga tidak perlu pertanyaan lanjutan
-     * atau hanya perlu pertanyaan terbatas yang logis sesuai kategori kerusakan.
-     *
-     * Types:
-     * - 'direct': Langsung ke diagnosis tanpa pertanyaan (gejala sudah pasti)
-     * - 'limited': Hanya tanya pertanyaan tertentu yang relevan
-     * - 'verify_only': Hanya verifikasi singkat lalu diagnosa
-     */
-    private const DIRECT_DIAGNOSIS_CONFIG = [
-        // ========== LAYAR ==========
-        // Layar pecah/retak → pasti kerusakan fisik LCD, langsung ganti
-        'layar.pecah' => [
-            'type' => 'direct',
-            'override_symptoms' => ['G005'],
-            'skip_bc' => true,
-            'direct_note' => 'Layar pecah/retak sudah pasti kerusakan fisik pada panel LCD dan harus diganti baru.',
-        ],
-        // Bercak putih/hitam → indikasi white spot atau dead pixel
-        'layar.bercak' => [
-            'type' => 'direct',
-            'override_symptoms' => ['G109', 'G110'],
-            'skip_bc' => true,
-            'direct_note' => 'Bercak putih atau titik hitam di layar sudah mengindikasikan white spot atau dead pixel pada panel LCD.',
-        ],
-
-        // ========== KEYBOARD ==========
-        // Keyboard mengetik sendiri → short circuit pada keyboard fisik
-        'input.kb_ketik_sendiri' => [
-            'type' => 'verify_only',
-            'override_symptoms' => ['G011'],
-            'skip_bc' => true,
-            'max_questions' => 1,
-            'direct_note' => 'Keyboard mengetik sendiri sudah dipastikan terjadi short circuit pada jalur keyboard fisik.',
-        ],
-        // Tombol mati sebagian → jalur putus pada PCB keyboard
-        'input.kb_sebagian' => [
-            'type' => 'verify_only',
-            'override_symptoms' => ['G010'],
-            'skip_bc' => true,
-            'max_questions' => 1,
-            'direct_note' => 'Beberapa tombol tidak berfungsi mengindikasikan ada jalur yang putus pada PCB keyboard.',
-        ],
-
-        // ========== LAPTOP MATI ==========
-        // Mati total → tanya 3 pertanyaan kunci: tombol power, indikator charger, bau terbakar
-        // Kemungkinan kerusakan: keyboard, mainboard, RAM, SSD/HDD, display
-        'daya.mati_total' => [
-            'type' => 'limited',
-            'override_symptoms' => ['G023'],
-            'skip_bc' => false,
-            'max_questions' => 3,
-            'direct_note' => 'Laptop mati total bisa disebabkan oleh beberapa komponen: keyboard, mainboard, RAM, SSD/HDD, atau display.',
-        ],
-
-        // ========== BATERAI ==========
-        // Baterai kembung → pasti rusak, harus segera diganti
-        'daya.kembung' => [
-            'type' => 'direct',
-            'override_symptoms' => ['G081'],
-            'skip_bc' => true,
-            'direct_note' => 'Baterai kembung sudah PASTI RUSAK dan HARUS SEGERA DIGANTI. Penggunaan baterai kembung sangat berbahaya karena risiko kebakaran.',
-        ],
-        // Baterai cepat habis → kesehatan menurun, tanya pertanyaan logis
-        'daya.boros' => [
-            'type' => 'limited',
-            'override_symptoms' => ['G026'],
-            'skip_bc' => false,
-            'max_questions' => 2,
-            'direct_note' => 'Baterai cepat habis biasanya karena kesehatan baterai sudah menurun secara signifikan.',
-        ],
-        // Baterai drop/loncat → kesehatan menurun
-        'daya.drop' => [
-            'type' => 'limited',
-            'override_symptoms' => ['G083', 'G026'],
-            'skip_bc' => false,
-            'max_questions' => 2,
-            'direct_note' => 'Persentase baterai tidak akurat dan cepat habis menunjukkan kesehatan baterai sudah menurun.',
-        ],
-        // Hanya nyala pakai charger → pasti baterai rusak
-        'daya.charger_only' => [
-            'type' => 'direct',
-            'override_symptoms' => ['G024', 'G152'],
-            'skip_bc' => true,
-            'direct_note' => 'Laptop hanya bisa nyala menggunakan charger, sudah dipastikan baterai rusak dan perlu diganti.',
-        ],
-
-        // ========== PERFORMA / LEMOT ==========
-        // Lemot → biasanya HDD, kalau SSD cek prosesor & RAM, pertimbangkan downgrade Windows
-        'software.lemot' => [
-            'type' => 'limited',
-            'override_symptoms' => ['G040'],
-            'skip_bc' => false,
-            'max_questions' => 3,
-            'direct_note' => 'Laptop lemot biasanya disebabkan oleh penggunaan HDD (belum SSD), RAM kurang, atau prosesor entry-level (Celeron/Pentium) dengan Windows 11 yang terlalu berat. Jika memungkinkan, pertimbangkan upgrade ke SSD dan/atau downgrade Windows untuk spek rendah.',
-        ],
-    ];
-
-    // ===========================
-    // SERVICE MENU (Tanya Dulu)
-    // ===========================
-    private const SERVICE_MENU = [
+private const SERVICE_MENU = [
         'hardware' => [
             'label' => 'Paket Hardware',
             'icon' => '🔧',
@@ -805,892 +629,68 @@ class DiagnosisChat extends Component
     ];
 
     /**
-     * Map UI device type → database device_type
-     * Setiap device type punya data terpisah di database
+     * Run the database seeds.
      */
-    private function getEngineDeviceType(): string
+    public function run(): void
     {
-        return $this->selectedDeviceType ?? 'laptop';
-    }
+        // 1. Seed Device Types
+        $order = 1;
+        foreach (self::DEVICE_TYPES as $key => $data) {
+            $deviceType = DeviceType::updateOrCreate(
+                ['slug' => $key],
+                [
+                    'name' => $data['label'],
+                    'icon' => $data['icon'],
+                    'description' => $data['desc'],
+                    'is_active' => true,
+                    'order_column' => $order++
+                ]
+            );
 
-    /**
-     * Load question filter untuk sub-keluhan tertentu
-     *
-     * @param string $configKey Format: "category_key.problem_key"
-     * @param string $deviceType Device type (laptop, pc, aio, printer)
-     * @return array|null Array of allowed question order numbers, or null if no filter
-     */
-    private function loadQuestionFilter(string $configKey, string $deviceType): ?array
-    {
-        static $filters = null;
-
-        if ($filters === null) {
-            $filtersPath = database_path('seeders/data/question_filters.php');
-            $filters = file_exists($filtersPath) ? require $filtersPath : [];
-        }
-
-        return $filters[$deviceType][$configKey] ?? null;
-    }
-
-    /**
-     * Get categories for the selected device type
-     */
-    private function getCategories(): array
-    {
-        if (!$this->selectedDeviceType) {
-            return [];
-        }
-
-        $deviceType = \App\Models\DeviceType::where('slug', $this->selectedDeviceType)->first();
-
-        if (!$deviceType) {
-            return match ($this->selectedDeviceType) {
-                'pc' => self::PC_CATEGORIES,
-                'aio' => self::AIO_CATEGORIES,
-                'printer' => self::PRINTER_CATEGORIES,
-                default => self::LAPTOP_CATEGORIES,
-            };
-        }
-
-        $dbCategories = \App\Models\DeviceComponent::where('device_type_id', $deviceType->id)
-            ->where('is_active', true)
-            ->orderBy('order_column')
-            ->get();
-
-        if ($dbCategories->isEmpty()) {
-            return match ($this->selectedDeviceType) {
-                'pc' => self::PC_CATEGORIES,
-                'aio' => self::AIO_CATEGORIES,
-                'printer' => self::PRINTER_CATEGORIES,
-                default => self::LAPTOP_CATEGORIES,
-            };
-        }
-
-        $categoriesArray = [];
-        foreach ($dbCategories as $cat) {
-            // Remove the device type slug prefix (e.g., 'laptop-') from the category slug
-            $cleanKey = str_replace($this->selectedDeviceType . '-', '', $cat->slug);
-
-            $categoriesArray[$cleanKey] = [
-                'label' => $cat->name,
-                'icon' => $cat->icon,
-                'desc' => $cat->description,
-                'engine_category' => $cat->engine_category,
-                'problems' => is_string($cat->problems_data) ? json_decode($cat->problems_data, true) : (is_array($cat->problems_data) ? $cat->problems_data : [])
-            ];
-        }
-
-        return $categoriesArray;
-    }
-
-    // ===========================
-    // LIFECYCLE
-    // ===========================
-
-    public function mount()
-    {
-        // Wizard starts with device type selection
-    }
-
-    // ===========================
-    // NAVIGATION ACTIONS
-    // ===========================
-
-    /**
-     * Select a device type
-     */
-        public function selectDevice($type): void
-    {
-        $device = \App\Models\DeviceType::find($type);
-        if (!$device) return;
-
-        $this->selectedDeviceType = $type;
-        $this->state = 'select_category';
-    }
-
-    // ===========================
-    // SERVICE INQUIRY (Tanya Dulu)
-    // ===========================
-
-    /**
-     * Enter service inquiry mode
-     */
-    public function selectServiceInquiry(): void
-    {
-        $this->state = 'service_inquiry';
-    }
-
-    /**
-     * Select a service category (hardware/software/upgrade/printer/lainnya)
-     */
-        public function selectServiceCategory($id): void
-    {
-        $category = \App\Models\ServiceCategory::find($id);
-        if (!$category) return;
-        $this->selectedServiceCategory = $id;
-        $this->selectedServiceData = [
-            'label' => $category->name,
-            'desc'  => $category->description,
-            'price' => $category->estimated_cost_range,
-        ];
-        $this->state = 'service_booking';
-    }
-
-    public function selectService($key): void
-    {
-        // Deprecated, flat list is used natively via selectServiceCategory
-    }
-
-    public function saveServiceBooking(): void
-    {
-        $this->validate([
-            'bookingForm.name' => 'required|string|max:100',
-            'bookingForm.phone' => 'required|string|max:20',
-            'bookingForm.notes' => 'nullable|string|max:500',
-        ]);
-
-        $serviceLabel = $this->selectedServiceData['label'] ?? '';
-        $servicePrice = $this->selectedServiceData['price'] ?? '';
-
-        $complaint = "[Tanya Dulu] {$serviceLabel} ({$servicePrice})";
-        if (!empty($this->bookingForm['notes'])) {
-            $complaint .= "\nCatatan: " . $this->bookingForm['notes'];
-        }
-
-        $booking = Booking::create([
-            'booking_code' => Booking::generateBookingCode(),
-            'name' => $this->bookingForm['name'],
-            'phone' => $this->bookingForm['phone'],
-            'address' => '',
-            'device_brand' => $this->bookingForm['laptop_brand'] ?? '',
-            'device_name' => $this->bookingForm['laptop_type'] ?? '',
-            'serial_number' => '',
-            'complaint' => $complaint,
-            'symptoms' => [],
-            'diagnosis_result' => [
-                'type' => 'service_inquiry',
-                'category' => $this->selectedServiceCategory,
-                'service' => $this->selectedServiceKey,
-                'service_label' => $serviceLabel,
-                'price' => $servicePrice,
-            ],
-            'ai_recommendation' => "Layanan: {$serviceLabel} - {$servicePrice}",
-            'status' => 'pending',
-        ]);
-
-        $this->bookingCode = $booking->booking_code;
-        $this->bookingSuccess = true;
-        $this->state = 'completed';
-    }
-
-    /**
-     * Select a category
-     */
-        public function selectCategory($key): void
-    {
-        $component = \App\Models\DeviceComponent::find($key);
-        if (!$component) return;
-
-        $this->selectedCategoryKey = $key;
-        $this->state = 'select_problem';
-    }
-
-    /**
-     * Select a specific problem within category
-     */
-    public function selectProblem(string $key): void
-    {
-        $categories = $this->getCategories();
-        $category = $categories[$this->selectedCategoryKey] ?? null;
-        if (!$category || !isset($category['problems'][$key])) return;
-
-        $this->selectedProblemKey = $key;
-        $problem = $category['problems'][$key];
-
-        // Cek apakah ada konfigurasi diagnosis langsung untuk problem ini
-        $configKey = "{$this->selectedCategoryKey}.{$key}";
-        $directConfig = self::DIRECT_DIAGNOSIS_CONFIG[$configKey] ?? null;
-
-        if ($directConfig) {
-            $this->handleDirectDiagnosis($problem, $category, $directConfig);
-            return;
-        }
-
-        // === Normal flow (tanpa pengecualian) ===
-
-        // Determine engine category (problem-level override or category default)
-        $engineCategory = $problem['engine_category'] ?? $category['engine_category'];
-
-        // Load symptoms from database by code, filtered by device type
-        $deviceType = $this->getEngineDeviceType();
-        $symptoms = Symptom::where('device_type', $deviceType)
-            ->whereIn('code', $problem['symptoms'])->get();
-
-        $facts = $symptoms->map(fn($s) => [
-            'id' => $s->id,
-            'code' => $s->code,
-            'name' => $s->name,
-            'category' => $s->category,
-            'weight' => $s->weight,
-        ])->toArray();
-
-        $this->collectedSymptoms = $symptoms->pluck('name')->toArray();
-
-        // Load question filter untuk sub-keluhan ini
-        $questionFilter = $this->loadQuestionFilter($configKey, $deviceType);
-
-        // Initialize engine with device type, category and initial symptoms
-        $engine = new ForwardChainingEngine($deviceType);
-        $engine->loadState([
-            'facts' => $facts,
-            'asked_questions' => [],
-            'current_category' => $engineCategory,
-            'negative_evidence' => [],
-            'device_type' => $deviceType,
-            'question_filter' => $questionFilter,
-        ]);
-
-        // Get first follow-up question
-        $question = $engine->getNextQuestion();
-
-        if ($question) {
-            $this->currentQuestion = $question;
-            $this->state = 'asking';
-        } else {
-            // No follow-up questions, go straight to diagnosis
-            $this->runDiagnosis($engine);
-        }
-
-        // Save engine state
-        $this->engineState = $engine->exportState();
-    }
-
-    /**
-     * Handle diagnosis langsung / pertanyaan terbatas
-     *
-     * Untuk kasus-kasus yang sudah jelas diagnosisnya:
-     * - 'direct': Langsung ke diagnosis tanpa pertanyaan
-     * - 'limited': Hanya tanya beberapa pertanyaan relevan
-     * - 'verify_only': Verifikasi singkat lalu diagnosa
-     */
-    protected function handleDirectDiagnosis(array $problem, array $category, array $config): void
-    {
-        $deviceType = $this->getEngineDeviceType();
-        $engineCategory = $problem['engine_category'] ?? $category['engine_category'];
-
-        // Gunakan override_symptoms jika ada, kalau tidak pakai symptoms dari problem
-        $symptomCodes = $config['override_symptoms'] ?? $problem['symptoms'];
-
-        // Load symptoms dari database
-        $symptoms = Symptom::where('device_type', $deviceType)
-            ->whereIn('code', $symptomCodes)->get();
-
-        $facts = $symptoms->map(fn($s) => [
-            'id' => $s->id,
-            'code' => $s->code,
-            'name' => $s->name,
-            'category' => $s->category,
-            'weight' => $s->weight,
-        ])->toArray();
-
-        $this->collectedSymptoms = $symptoms->pluck('name')->toArray();
-
-        // Simpan config dan set skip BC flag
-        $this->directDiagnosisConfig = $config;
-        $this->skipBcVerification = $config['skip_bc'] ?? false;
-
-        if ($config['type'] === 'direct') {
-            // ===== DIRECT: Skip semua pertanyaan, langsung diagnosa =====
-            $engine = new ForwardChainingEngine($deviceType);
-            $engine->loadState([
-                'facts' => $facts,
-                'asked_questions' => [],
-                'current_category' => $engineCategory,
-                'negative_evidence' => [],
-                'device_type' => $deviceType,
-            ]);
-
-            $result = $engine->runInference();
-            $this->engineState = $engine->exportState();
-
-            // Tambahkan catatan diagnosis langsung
-            $result['direct_diagnosis_note'] = $config['direct_note'] ?? null;
-            $result['is_direct_diagnosis'] = true;
-            $result['method'] = 'direct_diagnosis';
-            $result['verification'] = null;
-
-            // Tandai semua diagnosis sebagai confirmed langsung
-            if (isset($result['diagnoses'])) {
-                foreach ($result['diagnoses'] as &$diag) {
-                    $diag['bc_verified'] = false;
-                    $diag['verification_status'] = 'direct_confirmed';
-                }
-                unset($diag);
+            // 2. Seed Device Components based on device type
+            $categories = [];
+            switch ($key) {
+                case 'laptop': $categories = self::LAPTOP_CATEGORIES; break;
+                case 'pc': $categories = self::PC_CATEGORIES; break;
+                case 'aio': $categories = self::AIO_CATEGORIES; break;
+                case 'printer': $categories = self::PRINTER_CATEGORIES; break;
             }
 
-            $this->diagnosisResult = $result;
-            $this->bcVerified = false;
-            $this->state = 'diagnosed';
-            return;
-        }
-
-        // ===== LIMITED / VERIFY_ONLY: Pertanyaan terbatas =====
-        $this->maxQuestions = $config['max_questions'] ?? 3;
-
-        // Load question filter untuk sub-keluhan ini
-        $configKey = "{$this->selectedCategoryKey}.{$this->selectedProblemKey}";
-        $questionFilter = $this->loadQuestionFilter($configKey, $deviceType);
-
-        $engine = new ForwardChainingEngine($deviceType);
-        $engine->loadState([
-            'facts' => $facts,
-            'asked_questions' => [],
-            'current_category' => $engineCategory,
-            'negative_evidence' => [],
-            'device_type' => $deviceType,
-            'question_filter' => $questionFilter,
-        ]);
-
-        // Get first follow-up question
-        $question = $engine->getNextQuestion();
-
-        if ($question) {
-            $this->currentQuestion = $question;
-            $this->state = 'asking';
-        } else {
-            // Tidak ada pertanyaan lagi, langsung diagnosa
-            $this->runDiagnosis($engine);
-        }
-
-        // Save engine state
-        $this->engineState = $engine->exportState();
-    }
-
-    /**
-     * Go back one step
-     */
-    public function goBack(): void
-    {
-        switch ($this->state) {
-            case 'select_category':
-                $this->selectedDeviceType = null;
-                $this->state = 'select_device';
-                break;
-
-            case 'select_problem':
-                $this->selectedCategoryKey = null;
-                $this->state = 'select_category';
-                break;
-
-            case 'asking':
-                // Reset diagnosis progress
-                $this->selectedProblemKey = null;
-                $this->currentQuestion = null;
-                $this->questionCount = 0;
-                $this->maxQuestions = 3;
-                $this->answeredQuestions = [];
-                $this->engineState = [];
-                $this->collectedSymptoms = [];
-                $this->bcEngineState = [];
-                $this->bcQuestions = [];
-                $this->bcChecklist = [];
-                $this->bcAnsweredQuestions = [];
-                $this->fcDiagnosisResult = null;
-                $this->bcVerified = false;
-                $this->directDiagnosisConfig = [];
-                $this->skipBcVerification = false;
-                $this->state = 'select_problem';
-                break;
-
-            case 'verifying':
-                // Go back from BC verification to re-do problem selection
-                $this->bcEngineState = [];
-                $this->bcQuestions = [];
-                $this->bcChecklist = [];
-                $this->bcAnsweredQuestions = [];
-                $this->fcDiagnosisResult = null;
-                $this->bcVerified = false;
-                $this->selectedProblemKey = null;
-                $this->currentQuestion = null;
-                $this->questionCount = 0;
-                $this->maxQuestions = 3;
-                $this->answeredQuestions = [];
-                $this->engineState = [];
-                $this->collectedSymptoms = [];
-                $this->directDiagnosisConfig = [];
-                $this->skipBcVerification = false;
-                $this->state = 'select_problem';
-                break;
-
-            // Service inquiry states
-            case 'service_inquiry':
-                $this->state = 'select_device';
-                break;
-
-            case 'service_detail':
-                $this->selectedServiceCategory = null;
-                $this->state = 'service_inquiry';
-                break;
-
-            case 'service_booking':
-                $this->selectedServiceKey = null;
-                $this->selectedServiceData = null;
-                $this->state = 'service_detail';
-                break;
-        }
-    }
-
-    // ===========================
-    // QUESTION HANDLING (Ya/Tidak buttons)
-    // ===========================
-
-    /**
-     * Answer "Ya" to current question
-     */
-    public function answerYes(): void
-    {
-        $this->processQuestionAnswer('ya');
-    }
-
-    /**
-     * Answer "Tidak" to current question
-     */
-    public function answerNo(): void
-    {
-        $this->processQuestionAnswer('tidak');
-    }
-
-    /**
-     * Answer "Tidak Tahu" - treated same as Tidak
-     */
-    public function answerSkip(): void
-    {
-        $this->processQuestionAnswer('tidak tahu', 'Tidak Tahu');
-    }
-
-    /**
-     * Answer a choice question by value (e.g. 'hdd hard disk', 'sudah ssd')
-     * $label is the human-readable label to show in the answered-questions summary
-     */
-    public function answerChoice(string $value, string $label): void
-    {
-        $this->processQuestionAnswer($value, $label);
-    }
-
-    /**
-     * Process answer (ya/tidak/choice) through the engine
-     */
-    protected function processQuestionAnswer(string $answer, ?string $displayLabel = null): void
-    {
-        if (!$this->currentQuestion) return;
-
-        $deviceType = $this->getEngineDeviceType();
-        $engine = new ForwardChainingEngine($deviceType);
-        $engine->loadState($this->engineState);
-
-        // Determine display label
-        if ($displayLabel === null) {
-            $displayLabel = match($answer) {
-                'ya' => 'Ya',
-                'tidak' => 'Tidak',
-                default => 'Tidak Tahu',
-            };
-        }
-        $this->answeredQuestions[] = [
-            'question' => $this->currentQuestion['question'],
-            'answer' => $displayLabel,
-        ];
-
-        // Process answer through engine
-        $engine->processAnswer($this->currentQuestion['id'], $answer);
-        $this->questionCount++;
-
-        // Update collected symptoms
-        $this->collectedSymptoms = $engine->getSymptomNames();
-
-        // Decide: ask more or diagnose
-        if ($engine->isReadyForDiagnosis() || $this->questionCount >= $this->maxQuestions) {
-            $this->runDiagnosis($engine);
-        } else {
-            $question = $engine->getNextQuestion();
-            if ($question) {
-                $this->currentQuestion = $question;
-                $this->state = 'asking';
-            } else {
-                $this->runDiagnosis($engine);
+            $catOrder = 1;
+            foreach ($categories as $catKey => $catData) {
+                DeviceComponent::updateOrCreate(
+                    [
+                        'device_type_id' => $deviceType->id,
+                        'slug' => $key . '-' . $catKey
+                    ],
+                    [
+                        'name' => $catData['label'],
+                        'icon' => $catData['icon'],
+                        'description' => $catData['desc'],
+                        'engine_category' => $catData['engine_category'] ?? null,
+                        'problems_data' => isset($catData['problems']) ? json_encode($catData['problems']) : null,
+                        'is_active' => true,
+                        'order_column' => $catOrder++
+                    ]
+                );
             }
         }
 
-        // Save engine state
-        $this->engineState = $engine->exportState();
-    }
-
-    // ===========================
-    // DIAGNOSIS
-    // ===========================
-
-    /**
-     * Run Forward Chaining inference, then start Backward Chaining verification
-     */
-    protected function runDiagnosis(ForwardChainingEngine $engine): void
-    {
-        $result = $engine->runInference();
-        $this->engineState = $engine->exportState();
-        $this->collectedSymptoms = $result['detected_symptoms'] ?? $this->collectedSymptoms;
-
-        // Tambahkan catatan direct diagnosis jika ada
-        if (!empty($this->directDiagnosisConfig['direct_note'])) {
-            $result['direct_diagnosis_note'] = $this->directDiagnosisConfig['direct_note'];
+        // 3. Seed Service Categories
+        $smOrder = 1;
+        foreach (self::SERVICE_MENU as $key => $data) {
+            ServiceCategory::updateOrCreate(
+                ['slug' => $key],
+                [
+                    'name' => $data['label'],
+                    'icon' => $data['icon'],
+                    'description' => $data['desc'],
+                    'services_data' => isset($data['services']) ? json_encode($data['services']) : null,
+                    'is_active' => true,
+                    'order_column' => $smOrder++
+                ]
+            );
         }
-
-        // Simpan hasil FC
-        $this->fcDiagnosisResult = $result;
-
-        // Cek apakah FC menghasilkan diagnosis
-        $diagnoses = $result['diagnoses'] ?? [];
-
-        if (!empty($diagnoses)) {
-            // Cek apakah BC harus di-skip (kasus diagnosis langsung)
-            if ($this->skipBcVerification) {
-                $this->finalizeDiagnosisWithoutBC($result);
-            } else {
-                // Mulai Backward Chaining untuk verifikasi
-                $this->startBackwardChaining($result, $engine);
-            }
-        } else {
-            // Tidak ada diagnosis → langsung ke hasil
-            $this->diagnosisResult = $result;
-            $this->state = 'diagnosed';
-        }
-    }
-
-    /**
-     * Mulai proses Backward Chaining
-     * Mengambil hipotesis dari FC dan menyiapkan pertanyaan verifikasi
-     */
-    protected function startBackwardChaining(array $fcResult, ForwardChainingEngine $fcEngine): void
-    {
-        $deviceType = $this->getEngineDeviceType();
-        $bcEngine = new BackwardChainingEngine($deviceType);
-
-        // Ambil symptom IDs yang sudah dikonfirmasi di FC
-        $confirmedSymptomIds = $fcEngine->getFacts()->pluck('id')->toArray();
-
-        // Inisialisasi BC dari hasil FC
-        $bcEngine->initFromForwardChaining($fcResult, $confirmedSymptomIds);
-
-        // Smart skip: jika FC sudah cukup yakin, skip BC
-        if ($bcEngine->shouldSkipVerification()) {
-            $this->finalizeDiagnosisWithoutBC($fcResult);
-            return;
-        }
-
-        // Get ALL verification questions at once (checklist mode)
-        $questions = $bcEngine->getAllVerificationQuestions();
-
-        if (!empty($questions)) {
-            $this->bcQuestions = $questions;
-            // Pre-initialize checklist: semua unchecked
-            $this->bcChecklist = [];
-            foreach ($questions as $q) {
-                $this->bcChecklist[$q['symptom_id']] = false;
-            }
-            $this->bcEngineState = $bcEngine->exportState();
-            $this->state = 'verifying';
-        } else {
-            $this->finalizeDiagnosisWithoutBC($fcResult);
-        }
-    }
-
-    // ===========================
-    // BACKWARD CHAINING VERIFICATION (One-shot Checklist)
-    // ===========================
-
-    /**
-     * Toggle checklist item (called from blade checkbox)
-     */
-    public function toggleBcCheck(int $symptomId): void
-    {
-        if (isset($this->bcChecklist[$symptomId])) {
-            $this->bcChecklist[$symptomId] = !$this->bcChecklist[$symptomId];
-        }
-    }
-
-    /**
-     * Submit semua jawaban checklist BC sekaligus
-     * Checked = Ya (gejala ada), Unchecked = Tidak (gejala tidak ada)
-     */
-    public function submitBcChecklist(): void
-    {
-        $deviceType = $this->getEngineDeviceType();
-        $bcEngine = new BackwardChainingEngine($deviceType);
-        $bcEngine->loadState($this->bcEngineState);
-
-        // Build answers from checklist
-        $answers = [];
-        foreach ($this->bcQuestions as $q) {
-            $symptomId = $q['symptom_id'];
-            $isChecked = $this->bcChecklist[$symptomId] ?? false;
-            $answer = $isChecked ? 'ya' : 'tidak';
-
-            $answers[] = [
-                'symptom_id' => $symptomId,
-                'answer' => $answer,
-            ];
-
-            // Log for display
-            $this->bcAnsweredQuestions[] = [
-                'question' => $q['question'],
-                'symptom' => $q['symptom_name'],
-                'answer' => $isChecked ? 'Ya' : 'Tidak',
-                'related_hypotheses' => $q['related_hypotheses'] ?? [],
-            ];
-        }
-
-        // Process all answers at once
-        $bcEngine->processAllVerificationAnswers($answers);
-
-        // Finalize with BC
-        $this->finalizeDiagnosisWithBC($bcEngine);
-        $this->bcEngineState = $bcEngine->exportState();
-    }
-
-    /**
-     * Submit checklist BC menggunakan daftar symptom_id tercentang dari client.
-     * Mengurangi request berulang saat user menekan checkbox satu per satu.
-     */
-    public function submitBcChecklistWithIds(array $checkedSymptomIds): void
-    {
-        $checkedSet = array_fill_keys(array_map('intval', $checkedSymptomIds), true);
-
-        foreach ($this->bcQuestions as $q) {
-            $symptomId = (int) ($q['symptom_id'] ?? 0);
-            if ($symptomId > 0) {
-                $this->bcChecklist[$symptomId] = isset($checkedSet[$symptomId]);
-            }
-        }
-
-        $this->submitBcChecklist();
-    }
-
-    /**
-     * Skip semua verifikasi BC dan langsung ke hasil
-     */
-    public function bcSkipAll(): void
-    {
-        $this->finalizeDiagnosisWithoutBC($this->fcDiagnosisResult);
-    }
-    /**
-     * Finalize diagnosis DENGAN Backward Chaining verification
-     */
-    protected function finalizeDiagnosisWithBC(BackwardChainingEngine $bcEngine): void
-    {
-        $bcResult = $bcEngine->calculateFinalDiagnosis();
-
-        // Gabungkan info dari FC dan BC
-        $this->diagnosisResult = [
-            'status' => $bcResult['status'],
-            'method' => 'hybrid_fc_bc',
-            'detected_symptoms' => $this->fcDiagnosisResult['detected_symptoms'] ?? $this->collectedSymptoms,
-            'symptom_codes' => $this->fcDiagnosisResult['symptom_codes'] ?? [],
-            'category' => $this->fcDiagnosisResult['category'] ?? null,
-            'diagnoses' => $bcResult['diagnoses'],
-            'total_rules_matched' => $this->fcDiagnosisResult['total_rules_matched'] ?? 0,
-            'verification' => [
-                'total_verifications' => $bcResult['total_verifications'],
-                'total_confirmed' => $bcResult['total_confirmed'],
-                'total_denied' => $bcResult['total_denied'],
-                'log' => $bcResult['verification_log'],
-            ],
-            'fc_original' => $this->fcDiagnosisResult,
-        ];
-
-        $this->bcVerified = true;
-        $this->state = 'diagnosed';
-    }
-
-    /**
-     * Finalize diagnosis TANPA Backward Chaining (fallback)
-     */
-    protected function finalizeDiagnosisWithoutBC(array $fcResult): void
-    {
-        // Tambahkan marker bahwa ini hanya FC
-        $fcResult['method'] = 'forward_chaining_only';
-        $fcResult['verification'] = null;
-
-        // Mark diagnoses as not BC verified
-        if (isset($fcResult['diagnoses'])) {
-            foreach ($fcResult['diagnoses'] as &$diag) {
-                $diag['bc_verified'] = false;
-                $diag['verification_status'] = 'unverified';
-            }
-            unset($diag);
-        }
-
-        $this->diagnosisResult = $fcResult;
-        $this->bcVerified = false;
-        $this->state = 'diagnosed';
-    }
-
-    // ===========================
-    // BOOKING
-    // ===========================
-
-    /**
-     * Show booking form
-     */
-    public function showBookingForm(): void
-    {
-        $this->state = 'booking';
-    }
-
-    /**
-     * Cancel booking
-     */
-    public function cancelBooking(): void
-    {
-        $this->state = 'diagnosed';
-    }
-
-    /**
-     * Save booking to database
-     */
-    public function saveBooking(): void
-    {
-        $device = \App\Models\DeviceType::where('slug', $this->selectedDeviceType)->first();
-        $deviceLabel = $device ? $device->name : (self::DEVICE_TYPES[$this->selectedDeviceType]['label'] ?? 'Perangkat');
-
-        $this->validate([
-            'bookingForm.name' => 'required|min:3',
-            'bookingForm.phone' => 'required|min:10',
-            'bookingForm.laptop_brand' => 'required',
-            'bookingForm.laptop_type' => 'required',
-        ], [
-            'bookingForm.name.required' => 'Nama lengkap wajib diisi',
-            'bookingForm.name.min' => 'Nama minimal 3 karakter',
-            'bookingForm.phone.required' => 'Nomor WhatsApp wajib diisi',
-            'bookingForm.phone.min' => 'Nomor WhatsApp minimal 10 digit',
-            'bookingForm.laptop_brand.required' => "Merek {$deviceLabel} wajib dipilih",
-            'bookingForm.laptop_type.required' => "Tipe {$deviceLabel} wajib diisi",
-        ]);
-
-        $diagnosisSummary = '';
-        if ($this->diagnosisResult && !empty($this->diagnosisResult['diagnoses'])) {
-            $diagnosisSummary = collect($this->diagnosisResult['diagnoses'])
-                ->map(fn($d) => "{$d['name']} ({$d['confidence']}%)")
-                ->implode(', ');
-        }
-
-        $categories = $this->getCategories();
-        $categoryLabel = $categories[$this->selectedCategoryKey]['label'] ?? '';
-        $problemLabel = '';
-        if ($this->selectedCategoryKey && $this->selectedProblemKey) {
-            $problemLabel = $categories[$this->selectedCategoryKey]['problems'][$this->selectedProblemKey]['label'] ?? '';
-        }
-
-        $device = \App\Models\DeviceType::where('slug', $this->selectedDeviceType)->first();
-        $deviceLabel = $device ? $device->name : (self::DEVICE_TYPES[$this->selectedDeviceType]['label'] ?? 'Perangkat');
-
-        $booking = Booking::create([
-            'booking_code' => Booking::generateBookingCode(),
-            'name' => $this->bookingForm['name'],
-            'phone' => $this->bookingForm['phone'],
-            'address' => '',
-            'device_brand' => $this->bookingForm['laptop_brand'],
-            'device_name' => $this->bookingForm['laptop_type'],
-            'serial_number' => '',
-            'complaint' => "Perangkat: {$deviceLabel}\nKategori: {$categoryLabel}\nMasalah: {$problemLabel}\n" .
-                          "Gejala: " . implode(', ', $this->collectedSymptoms) .
-                          "\n\nDiagnosis Sistem: " . $diagnosisSummary .
-                          ($this->bookingForm['notes'] ? "\n\nCatatan: " . $this->bookingForm['notes'] : ''),
-            'symptoms' => $this->collectedSymptoms,
-            'diagnosis_result' => $this->diagnosisResult,
-            'ai_recommendation' => $diagnosisSummary,
-            'status' => 'pending',
-        ]);
-
-        $this->bookingCode = $booking->booking_code;
-        $this->bookingSuccess = true;
-        $this->state = 'completed';
-    }
-
-    // ===========================
-    // RESET
-    // ===========================
-
-    /**
-     * Reset everything and start over
-     */
-    public function resetAll(): void
-    {
-        $this->state = 'select_device';
-        $this->selectedDeviceType = null;
-        $this->selectedCategoryKey = null;
-        $this->selectedProblemKey = null;
-        $this->collectedSymptoms = [];
-        $this->diagnosisResult = null;
-        $this->currentQuestion = null;
-        $this->questionCount = 0;
-        $this->answeredQuestions = [];
-        $this->engineState = [];
-        $this->bookingForm = [
-            'name' => '',
-            'phone' => '',
-            'email' => '',
-            'laptop_brand' => '',
-            'laptop_type' => '',
-            'notes' => '',
-        ];
-        $this->bookingCode = '';
-        $this->bookingSuccess = false;
-        $this->bcEngineState = [];
-        $this->bcQuestions = [];
-        $this->bcChecklist = [];
-        $this->bcAnsweredQuestions = [];
-        $this->fcDiagnosisResult = null;
-        $this->bcVerified = false;
-        $this->directDiagnosisConfig = [];
-        $this->skipBcVerification = false;
-        $this->maxQuestions = 3;
-        $this->selectedServiceCategory = null;
-        $this->selectedServiceKey = null;
-        $this->selectedServiceData = null;
-    }
-
-    // ===========================
-    // RENDER
-    // ===========================
-
-    public function render()
-    {
-        $dbDeviceTypes = \App\Models\DeviceType::where('is_active', true)->orderBy('order_column')->get()->keyBy('slug')->map(function ($device) {
-            return [
-                'label' => $device->name,
-                'icon' => $device->icon,
-                'desc' => $device->description
-            ];
-        })->toArray();
-
-        $categories = $this->getCategories();
-
-        $dbServiceMenu = \App\Models\ServiceCategory::where('is_active', true)->orderBy('order_column')->get()->keyBy('slug')->map(function ($cat) {
-            return [
-                'label' => $cat->name,
-                'icon' => $cat->icon,
-                'desc' => $cat->description,
-                'services' => is_string($cat->services_data) ? json_decode($cat->services_data, true) : (is_array($cat->services_data) ? $cat->services_data : [])
-            ];
-        })->toArray();
-
-        return view('livewire.diagnosis-chat', [
-            'deviceTypes' => !empty($dbDeviceTypes) ? $dbDeviceTypes : self::DEVICE_TYPES,
-            'selectedDeviceType' => $this->selectedDeviceType,
-            'categories' => $categories,
-            'selectedCategoryData' => $this->selectedCategoryKey
-                ? ($categories[$this->selectedCategoryKey] ?? null)
-                : null,
-            'serviceMenu' => !empty($dbServiceMenu) ? $dbServiceMenu : self::SERVICE_MENU,
-        ])->layout('layouts.diagnosis', ['title' => 'Sistem Pakar Diagnosis - Cellcom']);
     }
 }
 

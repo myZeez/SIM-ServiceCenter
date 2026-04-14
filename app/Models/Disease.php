@@ -18,6 +18,8 @@ class Disease extends Model
         'min_cost',
         'max_cost',
         'level',
+        'device_type_id',
+        'device_component_id',
     ];
 
     protected $casts = [
@@ -25,6 +27,16 @@ class Disease extends Model
         'min_cost' => 'decimal:2',
         'max_cost' => 'decimal:2',
     ];
+
+    public function deviceType()
+    {
+        return $this->belongsTo(DeviceType::class);
+    }
+
+    public function component()
+    {
+        return $this->belongsTo(DeviceComponent::class, 'device_component_id');
+    }
 
     /**
      * Relasi ke symptoms melalui rules

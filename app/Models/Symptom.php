@@ -15,12 +15,24 @@ class Symptom extends Model
         'keywords',
         'follow_up_question',
         'weight',
+        'device_type_id',
+        'device_component_id',
     ];
 
     protected $casts = [
         'keywords' => 'array',
         'weight' => 'decimal:2',
     ];
+
+    public function deviceType()
+    {
+        return $this->belongsTo(DeviceType::class);
+    }
+
+    public function component()
+    {
+        return $this->belongsTo(DeviceComponent::class, 'device_component_id');
+    }
 
     /**
      * Relasi ke diseases melalui rules

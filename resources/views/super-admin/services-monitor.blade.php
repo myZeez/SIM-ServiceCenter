@@ -1,15 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Admin Activity Logs') }}
+            {{ __('Pantau Service') }}
         </h2>
     </x-slot>
 
     <div class="py-4">
         <div class="w-full mx-auto">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <livewire:admin-activity-log />
-            </div>
+            <livewire:service-monitor />
         </div>
     </div>
 </x-app-layout>

@@ -19,7 +19,7 @@
             <!-- Super Admin Navigation -->
             <nav x-data="{ open: false }" class="bg-red-800 dark:bg-gray-800 border-b border-red-700 dark:border-gray-700 sticky top-0 z-50">
                 <!-- Primary Navigation Menu -->
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
                         <div class="flex">
                             <!-- Logo -->
@@ -35,9 +35,15 @@
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-2 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-2 sm:-my-px sm:ms-10 sm:flex gap-4">
                                 <x-nav-link :href="route('super-admin.dashboard')" :active="request()->routeIs('super-admin.dashboard')" class="text-white hover:text-gray-200 hover:border-gray-200 focus:text-gray-200 focus:border-gray-200">
                                     {{ __('Dashboard Monitoring') }}
+                                </x-nav-link>
+                                <x-nav-link :href="route('super-admin.activity-log')" :active="request()->routeIs('super-admin.activity-log')" class="text-white hover:text-gray-200 hover:border-gray-200 focus:text-gray-200 focus:border-gray-200">
+                                    {{ __('Log Aktivitas') }}
+                                </x-nav-link>
+                                <x-nav-link :href="route('super-admin.settings')" :active="request()->routeIs('super-admin.settings')" class="text-white hover:text-gray-200 hover:border-gray-200 focus:text-gray-200 focus:border-gray-200">
+                                    {{ __('Pengaturan') }}
                                 </x-nav-link>
                             </div>
                         </div>
@@ -89,7 +95,7 @@
             <!-- Page Heading -->
             @isset($header)
                 <header class="bg-white dark:bg-gray-800 shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <div class="w-full mx-auto py-4 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>

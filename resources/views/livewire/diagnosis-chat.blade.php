@@ -91,7 +91,7 @@
             <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:20px;">
                 <button wire:click="selectServiceInquiry" class="service-pill service-pill-ask">
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Mau tanya dulu soal layanan? <strong style="margin-left:4px;">Tanya Dulu →</strong>
+                    Ingin tahu harga dan detail layanan? <strong style="margin-left:4px;">Informasi Layanan →</strong>
                 </button>
                 <a href="{{ route('service-status') }}" class="service-pill service-pill-status">
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
@@ -589,7 +589,7 @@
         </div>
         @endif
 
-        {{-- ==================== TANYA DULU: PILIH KATEGORI LAYANAN ==================== --}}
+        {{-- ==================== INFORMASI LAYANAN: PILIH KATEGORI LAYANAN ==================== --}}
         @if($state === 'service_inquiry')
         <div class="anim-up">
             <button wire:click="goBack" class="back-btn">
@@ -601,7 +601,7 @@
                 <div class="hero-icon">
                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <h1 class="hero-title">Tanya Dulu <span class="hero-emoji">💬</span></h1>
+                <h1 class="hero-title">Informasi Layanan <span class="hero-emoji">💬</span></h1>
                 <p class="hero-sub">Pilih kategori layanan yang ingin kamu tanyakan</p>
             </div>
 
@@ -617,7 +617,7 @@
         </div>
         @endif
 
-        {{-- ==================== TANYA DULU: DAFTAR LAYANAN + HARGA ==================== --}}
+        {{-- ==================== INFORMASI LAYANAN: DAFTAR LAYANAN + HARGA ==================== --}}
         @if($state === 'service_detail' && $selectedServiceCategory)
         <div class="anim-up">
             <button wire:click="goBack" class="back-btn">
@@ -635,18 +635,18 @@
             <div class="problem-list">
                 @foreach($catData['services'] as $sKey => $svc)
                 <button wire:click="selectService('{{ $sKey }}')" class="problem-card">
-                    <div class="problem-info">
+                    <div class="problem-info" style="flex: 1;">
                         <span class="problem-label">{{ $svc['label'] }}</span>
                         <span class="problem-desc">{{ $svc['desc'] }}</span>
                     </div>
-                    <span style="font-size:13px;font-weight:700;color:var(--accent-light);white-space:nowrap;">{{ $svc['price'] }}</span>
+                    <span style="font-size:13px;font-weight:700;color:var(--accent-light);white-space:nowrap;margin-left:auto;">{{ $svc['price'] }}</span>
                 </button>
                 @endforeach
             </div>
         </div>
         @endif
 
-        {{-- ==================== TANYA DULU: BOOKING FORM ==================== --}}
+        {{-- ==================== INFORMASI LAYANAN: BOOKING FORM ==================== --}}
         @if($state === 'service_booking' && $selectedServiceData)
         <div class="anim-up">
             <button wire:click="goBack" class="back-btn">
