@@ -901,7 +901,10 @@ class DiagnosisChat extends Component
      */
         public function selectDevice($type): void
     {
-        $device = \App\Models\DeviceType::where('slug', $type)->first() ?? \App\Models\DeviceType::find($type);
+        $device = \App\Models\DeviceType::where('slug', $type)->first();
+        if (!$device) {
+            $device = \App\Models\DeviceType::where('id', is_numeric($type) ? $type : 0)->first();
+        }
         if (!$device) return;
 
         $this->selectedDeviceType = $device->slug;
