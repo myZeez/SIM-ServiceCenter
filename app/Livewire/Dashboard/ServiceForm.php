@@ -260,16 +260,14 @@ class ServiceForm extends Component
             'description' => 'Servis baru diterima / dibuat',
         ]);
 
-        // Auto-add selected services as manual spareparts for REGULER type
+        // Auto-add selected services as service cost for REGULER type
         if ($this->serviceType === 'REGULER' && !empty($this->selectedServiceItems)) {
-            $totalEstimatedCosts = 0;
+            $totalServiceCosts = 0;
 
             foreach ($this->selectedServiceItems as $itemStr) {
-                $label = $itemStr;
                 $price = 0;
                 
                 if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
-                    $label = trim($matches[1]);
                     // Clean price string, matching Rp or just numbers
                     $priceString = preg_replace('/[Rp\s\.]/i', '', $matches[2]);
                     if (is_numeric($priceString)) {
@@ -277,27 +275,13 @@ class ServiceForm extends Component
                     }
                 }
 
-                // Create manual sparepart entry
-                $sparepart = \App\Models\Sparepart::create([
-                    'name' => $label,
-                    'code' => 'MAN-' . time() . '-' . rand(100, 999), 
-                    'stock' => 0,
-                    'price' => $price,
-                ]);
-
-                \App\Models\ServiceSparepart::create([
-                    'service_id' => $service->id,
-                    'sparepart_id' => $sparepart->id,
-                    'qty' => 1,
-                    'price' => $price,
-                ]);
-
-                $totalEstimatedCosts += $price;
+                $totalServiceCosts += $price;
             }
 
-            if ($totalEstimatedCosts > 0) {
-                $service->estimated_cost += $totalEstimatedCosts;
-                $service->total_cost += $totalEstimatedCosts;
+            if ($totalServiceCosts > 0) {
+                $service->service_cost = $totalServiceCosts;
+                $service->estimated_cost += $totalServiceCosts;
+                $service->total_cost += $totalServiceCosts;
                 $service->save();
             }
         }
