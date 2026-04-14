@@ -51,12 +51,12 @@ class ExpertSystemSeeder extends Seeder
         $this->command->info('=== Seeding Expert System Data (Multi-Device) ===');
 
         // Clear existing data
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Rule::truncate();
         CategoryQuestion::truncate();
         Symptom::truncate();
         Disease::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         foreach (self::DEVICE_CONFIGS as $deviceType => $config) {
             $this->command->info("--- Seeding {$config['label']} ---");
