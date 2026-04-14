@@ -928,9 +928,13 @@ class DiagnosisChat extends Component
      */
         public function selectServiceCategory($id): void
     {
-        $category = \App\Models\ServiceCategory::find($id);
+        $category = \App\Models\ServiceCategory::where('slug', $id)->first();
+        if (!$category) {
+            $category = \App\Models\ServiceCategory::where('id', is_numeric($id) ? $id : 0)->first();
+        }
         if (!$category) return;
-        $this->selectedServiceCategory = $id;
+        
+        $this->selectedServiceCategory = $category->slug;
         $this->selectedServiceData = [
             'label' => $category->name,
             'desc'  => $category->description,
@@ -991,10 +995,13 @@ class DiagnosisChat extends Component
      */
         public function selectCategory($key): void
     {
-        $component = \App\Models\DeviceComponent::find($key);
+        $component = \App\Models\DeviceComponent::where('slug', $key)->first();
+        if (!$component) {
+            $component = \App\Models\DeviceComponent::where('id', is_numeric($key) ? $key : 0)->first();
+        }
         if (!$component) return;
 
-        $this->selectedCategoryKey = $key;
+        $this->selectedCategoryKey = $component->slug;
         $this->state = 'select_problem';
     }
 
