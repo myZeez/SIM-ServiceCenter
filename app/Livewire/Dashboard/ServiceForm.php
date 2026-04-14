@@ -108,11 +108,41 @@ class ServiceForm extends Component
             $this->customerName = $booking->name;
             $this->customerPhone = $booking->phone;
             $this->customerAddress = $booking->address;
-            $this->deviceName = $booking->device_brand . ' ' . $booking->device_name;
+            $this->deviceName = trim($booking->device_brand . ' ' . $booking->device_name);
             $this->serialNumber = $booking->serial_number ?? '';
             $this->complaint = $booking->complaint;
             $this->search = $booking->name . ' (' . $booking->booking_code . ')';
             $this->showCustomerResults = false;
+
+            // Handle service category and items, and clean up the complaint
+            $this->selectedServiceCategoryId = null;
+            $this->selectedServiceItems = [];
+
+            $dr = is_string($booking->diagnosis_result) ? json_decode($booking->diagnosis_result, true) : $booking->diagnosis_result;
+            
+            if ($dr && is_array($dr) && isset($dr['type']) && $dr['type'] === 'service_inquiry') {
+                if (!empty($dr['category'])) {
+                    $cat = collect($this->availableCategories)->firstWhere('slug', $dr['category']);
+                    if ($cat) {
+                        $this->selectedServiceCategoryId = $cat->id;
+                        $this->updatedSelectedServiceCategoryId($cat->id);
+                    }
+                }
+                
+                if (!empty($dr['service_items']) && is_array($dr['service_items'])) {
+                    $this->selectedServiceItems = collect($dr['service_items'])->map(function($item) {
+                        // Some may be strictly "Label (Price)" format
+                        return $item;
+                    })->toArray();
+                }
+
+                // Clean the complaint string for the admin view
+                if (preg_match('/(Keluhan\/Layanan Tambahan:|Catatan:)\s*(.*)/is', $this->complaint, $matches)) {
+                    $this->complaint = trim($matches[2]);
+                } elseif (strpos($this->complaint, '[Tanya Dulu]') !== false) {
+                    $this->complaint = '';
+                }
+            }
 
             // Check if customer already exists by phone
             $existingCustomer = Customer::where('phone', $booking->phone)->first();
