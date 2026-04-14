@@ -92,6 +92,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('su
         return view('super-admin.settings');
     })->name('settings');
 
+    // Manajemen Sparepart
+    Route::get('/spareparts', \App\Livewire\Admin\SparepartManagement::class)
+        ->name('spareparts');
+
     // Management User
     Route::get('/users', function () {
         return view('super-admin.users'); // or pointing to a livewire user component if exists
