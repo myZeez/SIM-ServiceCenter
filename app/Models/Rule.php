@@ -105,8 +105,9 @@ class Rule extends Model
             }
 
             // Bobot CF berdasarkan coverage: lebih banyak gejala cocok = CF lebih tinggi
-            // Ini memastikan disease dengan lebih banyak gejala terkonfirmasi naik peringkat
-            $coverageFactor = $totalMatched / $totalRequired;
+            // Penalti coverage diperhalus agar persentase keyakinan tidak anjlok ke bawah 50%
+            // Base modifier 0.6 + sisa proporsi, misal 1/3 (0.33) = 0.6 + 0.13 = 0.73 (penurunan wajar)
+            $coverageFactor = 0.60 + (0.40 * ($totalMatched / $totalRequired));
             $adjustedCf = $cfCombined * $coverageFactor;
 
             $disease = $rules->first()->disease;
