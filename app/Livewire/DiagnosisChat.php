@@ -868,8 +868,8 @@ class DiagnosisChat extends Component
 
         $categoriesArray = [];
         foreach ($dbCategories as $cat) {
-            // Remove the device type slug prefix (e.g., 'laptop-') from the category slug
-            $cleanKey = str_replace($this->selectedDeviceType . '-', '', $cat->slug);
+            // Remove the device type slug prefix (e.g., 'laptop_' or 'laptop-') from the category slug
+            $cleanKey = str_replace([$this->selectedDeviceType . '_', $this->selectedDeviceType . '-'], '', $cat->slug);
 
             $categoriesArray[$cleanKey] = [
                 'label' => $cat->name,
@@ -933,7 +933,7 @@ class DiagnosisChat extends Component
             $category = \App\Models\ServiceCategory::where('id', is_numeric($id) ? $id : 0)->first();
         }
         if (!$category) return;
-        
+
         $this->selectedServiceCategory = $category->slug;
         $this->selectedServiceData = [
             'label' => $category->name,
@@ -993,15 +993,29 @@ class DiagnosisChat extends Component
     /**
      * Select a category
      */
-        public function selectCategory($key): void
+    public function selectCategory($key): void
     {
-        $component = \App\Models\DeviceComponent::where('slug', $key)->first();
+        $componentSlug = $this->selectedDeviceType . '_' . $key;
+        $component = \App\Models\DeviceComponent::where('slug', $componentSlug)->first();
+        
         if (!$component) {
-            $component = \App\Models\DeviceComponent::where('id', is_numeric($key) ? $key : 0)->first();
+            $componentSlug = $this->selectedDeviceType . '-' . $key;
+            $component = \App\Models\DeviceComponent::where('slug', $componentSlug)->first();
         }
-        if (!$component) return;
 
-        $this->selectedCategoryKey = $component->slug;
+        if (!$component) {
+            $component = \App\Models\DeviceComponent::where('slug', $key)->first();
+        }
+        
+        if (!$component) {
+            // Backup for legacy fallback if reading from config arrays
+            $component = ['slug' => $key];
+            $this->selectedCategoryKey = $key;
+            $this->state = 'select_problem';
+            return;
+        }
+
+        $this->selectedCategoryKey = str_replace([$this->selectedDeviceType . '_', $this->selectedDeviceType . '-'], '', $component->slug);
         $this->state = 'select_problem';
     }
 
