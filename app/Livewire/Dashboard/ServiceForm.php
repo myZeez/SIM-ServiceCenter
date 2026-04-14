@@ -134,6 +134,21 @@ class ServiceForm extends Component
                         // Some may be strictly "Label (Price)" format
                         return $item;
                     })->toArray();
+                } else {
+                    // Fallback to parse the complaint text for "Layanan Dipilih:" lines
+                    if (preg_match('/Layanan Dipilih:\s*\n*((?:-\s.*?\n*)+)/s', $this->complaint, $linesMatch)) {
+                        $lines = explode("\n", trim($linesMatch[1]));
+                        $parsedItems = [];
+                        foreach($lines as $line) {
+                            $cleanLine = trim(preg_replace('/^-\s*/', '', $line));
+                            if ($cleanLine && !str_starts_with($cleanLine, 'Catatan:') && !str_starts_with($cleanLine, 'Keluhan/Layanan Tambahan:')) {
+                                $parsedItems[] = $cleanLine;
+                            }
+                        }
+                        if (!empty($parsedItems)) {
+                            $this->selectedServiceItems = $parsedItems;
+                        }
+                    }
                 }
 
                 // Clean the complaint string for the admin view
@@ -266,7 +281,7 @@ class ServiceForm extends Component
 
             foreach ($this->selectedServiceItems as $itemStr) {
                 $price = 0;
-                
+
                 if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
                     // Clean price string, matching Rp or just numbers
                     $priceString = preg_replace('/[Rp\s\.]/i', '', $matches[2]);
