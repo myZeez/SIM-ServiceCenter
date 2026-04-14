@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            DeviceMasterDataSeeder::class,
+            DiagnosisChatDataSeeder::class,
             ExpertSystemSeeder::class,
             AdminUserSeeder::class,
         ]);
