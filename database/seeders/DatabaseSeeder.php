@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DiagnosisChatDataSeeder::class,
             ExpertSystemSeeder::class,
+            FixForeignKeysSeeder::class,
             AdminUserSeeder::class,
         ]);
     }
