@@ -136,12 +136,14 @@ class ServiceForm extends Component
                     })->toArray();
                 } else {
                     // Fallback to parse the complaint text for "Layanan Dipilih:" lines
-                    if (preg_match('/Layanan Dipilih:\s*\n*((?:-\s.*?\n*)+)/s', $this->complaint, $linesMatch)) {
-                        $lines = explode("\n", trim($linesMatch[1]));
+                    // Handles both inline "- Item1 - Item2" and multiline
+                    if (preg_match('/Layanan Dipilih:\s*(.*?)(?=\r?\n?Catatan:|\r?\n?Keluhan\/Layanan Tambahan:|$)/is', $this->complaint, $matches)) {
+                        $servicesString = trim($matches[1]);
+                        $parts = explode('-', $servicesString);
                         $parsedItems = [];
-                        foreach($lines as $line) {
-                            $cleanLine = trim(preg_replace('/^-\s*/', '', $line));
-                            if ($cleanLine && !str_starts_with($cleanLine, 'Catatan:') && !str_starts_with($cleanLine, 'Keluhan/Layanan Tambahan:')) {
+                        foreach($parts as $part) {
+                            $cleanLine = trim($part);
+                            if (!empty($cleanLine)) {
                                 $parsedItems[] = $cleanLine;
                             }
                         }
