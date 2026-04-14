@@ -119,7 +119,7 @@ class ServiceForm extends Component
             $this->selectedServiceItems = [];
 
             $dr = is_string($booking->diagnosis_result) ? json_decode($booking->diagnosis_result, true) : $booking->diagnosis_result;
-            
+
             if ($dr && is_array($dr) && isset($dr['type']) && $dr['type'] === 'service_inquiry') {
                 if (!empty($dr['category'])) {
                     $cat = collect($this->availableCategories)->firstWhere('slug', $dr['category']);
@@ -128,7 +128,7 @@ class ServiceForm extends Component
                         $this->updatedSelectedServiceCategoryId($cat->id);
                     }
                 }
-                
+
                 if (!empty($dr['service_items']) && is_array($dr['service_items'])) {
                     $this->selectedServiceItems = collect($dr['service_items'])->map(function($item) {
                         // Some may be strictly "Label (Price)" format
@@ -253,12 +253,54 @@ class ServiceForm extends Component
             'total_cost' => 0,
         ]);
 
-        // Create log
+                // Create log
         $service->serviceLogs()->create([
             'user_id' => auth()->id(),
             'status' => 'Pending',
             'description' => 'Servis baru diterima / dibuat',
         ]);
+
+        // Auto-add selected services as manual spareparts for REGULER type
+        if ($this->serviceType === 'REGULER' && !empty($this->selectedServiceItems)) {
+            $totalEstimatedCosts = 0;
+
+            foreach ($this->selectedServiceItems as $itemStr) {
+                $label = $itemStr;
+                $price = 0;
+                
+                if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
+                    $label = trim($matches[1]);
+                    // Clean price string, matching Rp or just numbers
+                    $priceString = preg_replace('/[Rp\s\.]/i', '', $matches[2]);
+                    if (is_numeric($priceString)) {
+                        $price = (int) $priceString;
+                    }
+                }
+
+                // Create manual sparepart entry
+                $sparepart = \App\Models\Sparepart::create([
+                    'name' => $label,
+                    'code' => 'MAN-' . time() . '-' . rand(100, 999), 
+                    'stock' => 0,
+                    'price' => $price,
+                ]);
+
+                \App\Models\ServiceSparepart::create([
+                    'service_id' => $service->id,
+                    'sparepart_id' => $sparepart->id,
+                    'qty' => 1,
+                    'price' => $price,
+                ]);
+
+                $totalEstimatedCosts += $price;
+            }
+
+            if ($totalEstimatedCosts > 0) {
+                $service->estimated_cost += $totalEstimatedCosts;
+                $service->total_cost += $totalEstimatedCosts;
+                $service->save();
+            }
+        }
 
         // Mark booking as confirmed if selected from booking
         if ($this->selectedBookingId) {
