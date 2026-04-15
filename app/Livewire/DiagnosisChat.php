@@ -1260,15 +1260,11 @@ class DiagnosisChat extends Component
                 $this->state = 'select_device';
                 break;
 
-            case 'service_detail':
-                $this->selectedServiceCategory = null;
-                $this->state = 'service_inquiry';
-                break;
-
             case 'service_booking':
-                $this->selectedServiceKey = null;
+                $this->selectedServiceCategory = null;
                 $this->selectedServiceData = null;
-                $this->state = 'service_detail';
+                $this->selectedServiceItems = []; // reset checkboxes
+                $this->state = 'service_inquiry';
                 break;
         }
     }
