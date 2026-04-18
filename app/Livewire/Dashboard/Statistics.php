@@ -25,9 +25,9 @@ class Statistics extends Component
         $today = Carbon::today();
 
         // Omset Bulan Ini
-        $this->monthlyRevenue = Service::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->where('approved', true)
+        $this->monthlyRevenue = Service::whereMonth('taken_at', Carbon::now()->month)
+            ->whereYear('taken_at', Carbon::now()->year)
+            ->where('status', 'Taken')
             ->sum('total_cost');
 
         // Jumlah Servis Bulan Ini
