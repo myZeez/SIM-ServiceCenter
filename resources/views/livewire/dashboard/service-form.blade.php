@@ -201,7 +201,7 @@
                 <input
                     type="text"
                     wire:model="deviceName"
-                    placeholder="Contoh: iPhone 13 Pro"
+                    placeholder="Contoh: Acer Swift X"
                     class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                     required
                 >
