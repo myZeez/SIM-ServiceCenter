@@ -16,7 +16,8 @@
             <div class="brand">
                 @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
                 @if ($appLogo)
-                    <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm">
+                    <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="brand-dot" style="display: none;"></div>
                 @else
                     <div class="brand-dot"></div>
                 @endif

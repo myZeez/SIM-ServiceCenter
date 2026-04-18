@@ -15,7 +15,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', 'Cellcom') }}</title>
-        
+
         @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
         @if ($appLogo)
             <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
@@ -39,7 +39,7 @@
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 min-w-0 w-full">
                         @if ($appLogo)
                             <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-                                <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none">
+                                <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
                             </div>
                         @else
                             <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
@@ -378,7 +378,7 @@
                     <div class="flex items-center gap-3">
                         @if ($appLogo)
                             <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-                                <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none">
+                                <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
                             </div>
                         @else
                             <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">

@@ -84,17 +84,17 @@
                     Logo Sistem (Opsional)
                 </label>
                 <p class="text-xs text-gray-500 mb-2">Upload untuk mengganti logo aplikasi (Format: PNG, JPG, maks 1MB).</p>
-                
+
                 @if ($currentLogo)
                     <div class="mb-3">
-                        <img src="{{ Storage::url($currentLogo) }}" alt="Current Logo" class="h-12 w-auto object-contain rounded">
+                        <img src="{{ asset('storage/' . $currentLogo) }}" alt="Current Logo" class="h-12 w-auto object-contain rounded" onerror="this.style.display='none'">
                     </div>
                 @endif
-                
+
                 <input type="file" wire:model="logo" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300 hover:file:bg-primary-100 mb-2">
-                
+
                 <div wire:loading wire:target="logo" class="text-xs text-blue-500 mt-1">Mengunggah logo...</div>
-                
+
                 @if ($logo)
                     <div class="mt-2">
                         <span class="text-xs text-green-600">Preview logo baru:</span>
