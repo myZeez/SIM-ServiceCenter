@@ -14,7 +14,12 @@
         {{-- Top Bar --}}
         <div class="top-bar">
             <a href="{{ route('diagnosis') }}" class="brand">
-                <div class="brand-dot"></div>
+                @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+                @if ($appLogo)
+                    <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm">
+                @else
+                    <div class="brand-dot"></div>
+                @endif
                 <span>Cellcom Expert System</span>
             </a>
             <a href="{{ route('diagnosis') }}" class="reset-btn">

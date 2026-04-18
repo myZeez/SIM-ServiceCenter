@@ -78,6 +78,32 @@
                 @error('techTarget') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
 
+            <!-- Logo -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-700">
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Logo Sistem (Opsional)
+                </label>
+                <p class="text-xs text-gray-500 mb-2">Upload untuk mengganti logo aplikasi (Format: PNG, JPG, maks 1MB).</p>
+                
+                @if ($currentLogo)
+                    <div class="mb-3">
+                        <img src="{{ Storage::url($currentLogo) }}" alt="Current Logo" class="h-12 w-auto object-contain rounded">
+                    </div>
+                @endif
+                
+                <input type="file" wire:model="logo" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300 hover:file:bg-primary-100 mb-2">
+                
+                <div wire:loading wire:target="logo" class="text-xs text-blue-500 mt-1">Mengunggah logo...</div>
+                
+                @if ($logo)
+                    <div class="mt-2">
+                        <span class="text-xs text-green-600">Preview logo baru:</span>
+                        <img src="{{ $logo->temporaryUrl() }}" class="h-12 w-auto mt-1 rounded shadow-sm">
+                    </div>
+                @endif
+                @error('logo') <span class="text-red-500 text-xs truncate">{{ $message }}</span> @enderror
+            </div>
+
             <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 transition">
                 Simpan Konfigurasi
             </button>

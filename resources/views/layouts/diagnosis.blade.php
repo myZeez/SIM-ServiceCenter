@@ -7,6 +7,11 @@
 
     <title>{{ $title ?? 'AI Diagnosis - Cellcom Service Center' }}</title>
 
+    @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+    @if ($appLogo)
+        <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
+    @endif
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />

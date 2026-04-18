@@ -7,10 +7,14 @@ use App\Models\User;
 use App\Models\Brand;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
 
 class Settings extends Component
 {
+    use WithFileUploads;
+
     // Settings Tabs
     public $activeTab = 'general';
 
@@ -18,6 +22,10 @@ class Settings extends Component
     public $adminFee;
     public $techCommission;
     public $techTarget;
+    
+    // Logo
+    public $logo;
+    public $currentLogo;
 
     // User Management
     public $users;
@@ -36,6 +44,7 @@ class Settings extends Component
         'adminFee' => 'required|numeric|min:0',
         'techCommission' => 'required|numeric|min:0|max:100',
         'techTarget' => 'required|numeric|min:0',
+        'logo' => 'nullable|image|max:1024',
     ];
 
     public function mount()
@@ -50,6 +59,7 @@ class Settings extends Component
         $this->adminFee = Setting::where('key', 'admin_fee_per_invoice')->value('value') ?? 20000;
         $this->techCommission = Setting::where('key', 'technician_commission_percent')->value('value') ?? 50;
         $this->techTarget = Setting::where('key', 'technician_monthly_target')->value('value') ?? 3000000;
+        $this->currentLogo = Setting::where('key', 'app_logo')->value('value') ?? null;
     }
 
     public function loadUsers()
@@ -67,6 +77,13 @@ class Settings extends Component
         Setting::updateOrCreate(['key' => 'admin_fee_per_invoice'], ['value' => $this->adminFee]);
         Setting::updateOrCreate(['key' => 'technician_commission_percent'], ['value' => $this->techCommission]);
         Setting::updateOrCreate(['key' => 'technician_monthly_target'], ['value' => $this->techTarget]);
+
+        if ($this->logo) {
+            $path = $this->logo->store('logos', 'public');
+            Setting::updateOrCreate(['key' => 'app_logo'], ['value' => $path]);
+            $this->currentLogo = $path;
+            $this->logo = null;
+        }
 
         session()->flash('message', 'Pengaturan global berhasil disimpan.');
     }

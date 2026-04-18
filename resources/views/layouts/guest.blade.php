@@ -6,6 +6,11 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
+        
+        @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+        @if ($appLogo)
+            <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
+        @endif
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -25,11 +30,16 @@
             <div class="relative w-full max-w-md">
                 <!-- Logo Section -->
                 <div class="text-center mb-8 animate-fade-in">
-                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl shadow-2xl mb-4 transform hover:scale-105 transition-all duration-300">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
+                    @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+                    @if ($appLogo)
+                        <img src="{{ Storage::url($appLogo) }}" alt="Cellcom Logo" class="w-20 auto object-contain mx-auto mb-4 transform hover:scale-105 transition-all duration-300">
+                    @else
+                        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl shadow-2xl mb-4 transform hover:scale-105 transition-all duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    @endif
                     <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Cellcom Service</h1>
                     <p class="text-gray-600 dark:text-gray-400">Sistem Manajemen Service Center</p>
                 </div>

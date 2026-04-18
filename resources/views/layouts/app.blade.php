@@ -15,6 +15,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', 'Cellcom') }}</title>
+        
+        @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+        @if ($appLogo)
+            <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
+        @endif
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -31,11 +37,17 @@
                 {{-- Logo --}}
                 <div class="flex items-center h-16 px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 min-w-0 w-full">
-                        <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
+                        @if ($appLogo)
+                            <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+                                <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none">
+                            </div>
+                        @else
+                            <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                        @endif
                         <div x-show="!sidebarCollapsed"
                             x-transition:enter="transition-opacity duration-200 delay-100"
                             x-transition:enter-start="opacity-0"
@@ -364,11 +376,17 @@
                 {{-- Mobile Logo --}}
                 <div class="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
+                        @if ($appLogo)
+                            <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+                                <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none">
+                            </div>
+                        @else
+                            <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                        @endif
                         <div>
                             <div class="text-base font-bold text-gray-900 dark:text-white leading-none">Cellcom</div>
                             <div class="text-[11px] text-gray-400 mt-0.5">Admin Panel</div>

@@ -14,7 +14,12 @@
         {{-- Brand + Actions --}}
         <div class="top-bar">
             <div class="brand">
-                <div class="brand-dot"></div>
+                @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
+                @if ($appLogo)
+                    <img src="{{ Storage::url($appLogo) }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm">
+                @else
+                    <div class="brand-dot"></div>
+                @endif
                 <span>Cellcom Expert System</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -1902,7 +1907,7 @@
         font-size: 13px;
         color: var(--text-muted);
     }
-    .diag-actions li svg { flex-shrink: 0; margin-top: 2px; color: #818cf8; }
+    .diag-actions li svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
     .diag-cost {
         display: flex;
         align-items: center;
@@ -2327,46 +2332,47 @@
     }
 
     /* Verification status badge on diagnosis card */
+    /* Verification badges */
     .diag-verify-badge {
         display: inline-flex; align-items: center; gap: 3px;
         font-size: .65rem; font-weight: 600; padding: 2px 8px;
         border-radius: 8px; text-transform: uppercase; letter-spacing: 0.3px;
     }
-    .verify-green { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .verify-green { background: var(--success-bg, rgba(34, 197, 94, 0.15)); color: var(--success-text, #22c55e); }
     .verify-blue  { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
     .verify-yellow { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-    .verify-red   { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .verify-red   { background: var(--error-bg, rgba(239, 68, 68, 0.15)); color: var(--error-text, #ef4444); }
     .verify-gray  { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
-    .verify-emerald { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .verify-emerald { background: var(--success-bg, rgba(16, 185, 129, 0.15)); color: var(--success-text, #10b981); }
 
     /* Direct diagnosis note */
     .direct-diagnosis-note {
         display: flex; align-items: flex-start; gap: 12px;
-        background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);
+        background: var(--success-bg); border: 1px solid var(--success-border);
         border-radius: 12px; padding: 14px 16px;
     }
     .direct-note-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
-    .direct-note-text { font-size: .85rem; color: #a7f3d0; line-height: 1.5; margin: 0; }
-    .dot-green { background: #10b981; }
+    .direct-note-text { font-size: .85rem; color: var(--success-text); line-height: 1.5; margin: 0; }
+    .dot-green { background: var(--success); }
 
     /* CF change indicator */
     .diag-cf-change {
         display: block; font-size: .65rem; font-weight: 600;
         margin-top: 2px; text-align: center;
     }
-    .cf-up { color: #22c55e; }
-    .cf-down { color: #ef4444; }
+    .cf-up { color: var(--success); }
+    .cf-down { color: var(--error); }
 
     /* Denied diagnosis card */
     .diag-rejected {
-        opacity: 0.6; border-color: rgba(239, 68, 68, 0.3) !important;
+        opacity: 0.6; border-color: var(--error-border, rgba(239, 68, 68, 0.3)) !important;
     }
 
     /* Denied symptoms tag */
-    .diag-denied-label { color: #ef4444 !important; }
+    .diag-denied-label { color: var(--error-text) !important; }
     .diag-denied-tag {
-        font-size: .72rem; background: rgba(239, 68, 68, 0.12);
-        color: #f87171; padding: 2px 8px; border-radius: 8px;
+        font-size: .72rem; background: var(--error-bg, rgba(239, 68, 68, 0.12));
+        color: var(--error-text); padding: 2px 8px; border-radius: 8px;
         text-decoration: line-through;
     }
 
@@ -2401,12 +2407,12 @@
         color: #06b6d4;
     }
     .warranty-note-content strong {
-        display: block; font-size: 14px; color: #e2e8f0; margin-bottom: 6px;
+        display: block; font-size: 14px; color: var(--text-primary); margin-bottom: 6px;
     }
     .warranty-note-content p {
-        font-size: 13px; color: #94a3b8; line-height: 1.6; margin: 0;
+        font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0;
     }
-    .warranty-note-content em { font-style: italic; color: #67e8f9; }
+    .warranty-note-content em { font-style: italic; color: var(--accent-light); }
     </style>
 
     {{-- Liquid tracking script --}}
