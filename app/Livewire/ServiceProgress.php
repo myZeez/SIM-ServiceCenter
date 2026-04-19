@@ -96,7 +96,19 @@ class ServiceProgress extends Component
         $cost = 0;
         foreach ($this->selectedServiceItems as $itemStr) {
             if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
-                $price = (int)preg_replace('/[^0-9]/', '', $matches[2]);
+                $priceStr = preg_replace('/[^0-9]/', '', $matches[2]);
+                $price = $priceStr === '' ? 0 : (int)$priceStr;
+                
+                // --- Fallback handling untuk data lawas (Tergantung spek) ---
+                if ($price === 0) {
+                    $itemLabel = strtolower(trim($matches[1]));
+                    if (str_contains($itemLabel, 'upgrade ram') || str_contains($itemLabel, 'upgrade ssd')) {
+                        $price = 200000;
+                    } elseif (str_contains($itemLabel, 'rakit pc')) {
+                        $price = 300000;
+                    }
+                }
+                
                 $cost += $price;
             }
         }
