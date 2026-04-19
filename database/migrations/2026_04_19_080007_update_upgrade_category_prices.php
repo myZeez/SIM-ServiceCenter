@@ -15,15 +15,15 @@ return new class extends Migration
         $category = DB::table('service_categories')->where('slug', 'upgrade')->first();
         if ($category) {
             $data = json_decode($category->services_data, true);
-            
+
             $data['upgrade_ram']['price'] = 'Rp 200.000';
             $data['upgrade_ram']['desc'] = 'Jasa tambah atau ganti RAM laptop/PC/AIO';
             $data['upgrade_ram']['note'] = 'Hanya biaya jasa pasang. Pembelian part dihitung terpisah atau bawa sendiri.';
-            
+
             $data['upgrade_ssd']['price'] = 'Rp 200.000';
             $data['upgrade_ssd']['desc'] = 'Jasa ganti HDD ke SSD atau upgrade kapasitas';
             $data['upgrade_ssd']['note'] = 'Hanya biaya jasa pasang (termasuk cloning data). Pembelian part dihitung terpisah.';
-            
+
             $data['rakit_pc'] = [
                 'label' => 'Jasa Rakit PC',
                 'desc' => 'Jasa perakitan PC Custom (Gaming/Office)',

@@ -164,6 +164,8 @@
                             <th scope="col" class="px-6 py-3">ADP</th>
                         @else
                             <th scope="col" class="px-6 py-3">Sparepart</th>
+                            <th scope="col" class="px-6 py-3 text-right">Hrg Part</th>
+                            <th scope="col" class="px-6 py-3 text-right">Hrg Jasa</th>
                             <th scope="col" class="px-6 py-3 text-right">Total</th>
                         @endif
                         <th scope="col" class="px-6 py-3">Teknisi</th>
@@ -213,11 +215,28 @@
                                         @foreach($service->serviceSpareparts as $sp)
                                             <div class="text-xs {{ !$loop->first ? 'mt-1 pt-1 border-t border-gray-100 dark:border-gray-700' : '' }}">
                                                 <span class="font-medium text-gray-800 dark:text-gray-200">{{ $sp->sparepart->name ?? '-' }}</span>
-                                                <span class="text-gray-500">{{ $sp->qty }}x Rp {{ number_format($sp->price, 0, ',', '.') }}</span>
+                                                <span class="text-gray-500">{{ $sp->qty }}x (Rp {{ number_format($sp->price, 0, ',', '.') }})</span>
                                             </div>
                                         @endforeach
                                     @else
                                         <span class="text-xs text-gray-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    @php
+                                        $partCost = $service->serviceSpareparts->sum(fn($sp) => $sp->price * $sp->qty);
+                                    @endphp
+                                    @if($partCost > 0)
+                                        Rp {{ number_format($partCost, 0, ',', '.') }}
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    @if($service->estimated_cost > 0)
+                                        Rp {{ number_format($service->estimated_cost, 0, ',', '.') }}
+                                    @else
+                                        <span class="text-gray-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">

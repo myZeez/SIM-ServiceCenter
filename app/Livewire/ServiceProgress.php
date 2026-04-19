@@ -98,7 +98,7 @@ class ServiceProgress extends Component
             if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
                 $priceStr = preg_replace('/[^0-9]/', '', $matches[2]);
                 $price = $priceStr === '' ? 0 : (int)$priceStr;
-                
+
                 // --- Fallback handling untuk data lawas (Tergantung spek) ---
                 if ($price === 0) {
                     $itemLabel = strtolower(trim($matches[1]));
@@ -108,7 +108,7 @@ class ServiceProgress extends Component
                         $price = 300000;
                     }
                 }
-                
+
                 $cost += $price;
             }
         }
