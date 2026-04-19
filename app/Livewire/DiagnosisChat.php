@@ -723,15 +723,21 @@ class DiagnosisChat extends Component
             'services' => [
                 'upgrade_ram' => [
                     'label' => 'Upgrade RAM',
-                    'desc' => 'Tambah atau ganti RAM laptop/PC/AIO',
-                    'price' => 'Tergantung spek',
-                    'note' => 'Harga tergantung jenis dan kapasitas RAM. Konsultasi gratis untuk cek kompatibilitas.',
+                    'desc' => 'Jasa tambah atau ganti RAM laptop/PC/AIO',
+                    'price' => 'Rp 200.000',
+                    'note' => 'Hanya biaya jasa pasang. Pembelian part dihitung terpisah atau bawa sendiri.',
                 ],
                 'upgrade_ssd' => [
                     'label' => 'Upgrade SSD / HDD',
-                    'desc' => 'Ganti HDD ke SSD atau upgrade kapasitas',
-                    'price' => 'Tergantung spek',
-                    'note' => 'Include cloning data dari drive lama. Harga tergantung kapasitas SSD.',
+                    'desc' => 'Jasa ganti HDD ke SSD atau upgrade kapasitas',
+                    'price' => 'Rp 200.000',
+                    'note' => 'Hanya biaya jasa pasang (termasuk cloning data). Pembelian part dihitung terpisah.',
+                ],
+                'rakit_pc' => [
+                    'label' => 'Jasa Rakit PC',
+                    'desc' => 'Jasa perakitan PC Custom (Gaming/Office)',
+                    'price' => 'Rp 300.000',
+                    'note' => 'Hanya biaya jasa rakit. Komponen bisa beli dari kami atau bawa sendiri.',
                 ],
             ],
         ],
@@ -961,13 +967,13 @@ class DiagnosisChat extends Component
         $servicePrice = $this->selectedServiceData['price'] ?? '';
 
                 $complaint = "[Tanya Dulu] {$serviceLabel}";
-        
+
         if (!empty($this->selectedServiceItems)) {
             $complaint .= "\nLayanan Dipilih:\n- " . implode("\n- ", $this->selectedServiceItems);
         } else {
             $complaint .= " ({$servicePrice})";
         }
-        
+
         if (!empty($this->bookingForm['notes'])) {
             $complaint .= "\n\nKeluhan/Layanan Tambahan: " . $this->bookingForm['notes'];
         }

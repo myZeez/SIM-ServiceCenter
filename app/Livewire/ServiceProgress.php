@@ -102,7 +102,7 @@ class ServiceProgress extends Component
         }
         $this->estimatedCost = $cost;
         $this->calculateTotalCost();
-        
+
         // Save automatically back to service cost
         if ($this->selectedService) {
             $this->selectedService->update([
@@ -281,6 +281,7 @@ class ServiceProgress extends Component
         }
 
         // Recalculate total cost
+        $this->noPartsNeeded = false; // Reset to false when adding part
         $this->calculateTotalCost();
 
         session()->flash('message', 'Sparepart berhasil ditambahkan!');
@@ -335,6 +336,9 @@ class ServiceProgress extends Component
         }
 
         $this->totalCost = $service->fresh()->total_cost;
+        if ($this->selectedService) {
+            $this->selectedService->refresh();
+        }
     }
 
     public function updatedHasAdp()
@@ -351,6 +355,16 @@ class ServiceProgress extends Component
 
     public function updatedNoPartsNeeded()
     {
+        if ($this->noPartsNeeded) {
+            // Remove all existing spareparts if they check "no parts needed"
+            if ($this->serviceId) {
+                $serviceSpareparts = ServiceSparepart::where('service_id', $this->serviceId)->get();
+                foreach ($serviceSpareparts as $serviceSparepart) {
+                    $serviceSparepart->sparepart->increment('stock', $serviceSparepart->qty);
+                    $serviceSparepart->delete();
+                }
+            }
+        }
         $this->calculateTotalCost();
     }
 

@@ -22,7 +22,7 @@ class Settings extends Component
     public $adminFee;
     public $techCommission;
     public $techTarget;
-    
+
     // Logo
     public $logo;
     public $currentLogo;

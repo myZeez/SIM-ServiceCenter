@@ -546,15 +546,21 @@ private const SERVICE_MENU = [
             'services' => [
                 'upgrade_ram' => [
                     'label' => 'Upgrade RAM',
-                    'desc' => 'Tambah atau ganti RAM laptop/PC/AIO',
-                    'price' => 'Tergantung spek',
-                    'note' => 'Harga tergantung jenis dan kapasitas RAM. Konsultasi gratis untuk cek kompatibilitas.',
+                    'desc' => 'Jasa tambah atau ganti RAM laptop/PC/AIO',
+                    'price' => 'Rp 200.000',
+                    'note' => 'Hanya biaya jasa pasang. Pembelian part dihitung terpisah atau bawa sendiri.',
                 ],
                 'upgrade_ssd' => [
                     'label' => 'Upgrade SSD / HDD',
-                    'desc' => 'Ganti HDD ke SSD atau upgrade kapasitas',
-                    'price' => 'Tergantung spek',
-                    'note' => 'Include cloning data dari drive lama. Harga tergantung kapasitas SSD.',
+                    'desc' => 'Jasa ganti HDD ke SSD atau upgrade kapasitas',
+                    'price' => 'Rp 200.000',
+                    'note' => 'Hanya biaya jasa pasang (termasuk cloning data). Pembelian part dihitung terpisah.',
+                ],
+                'rakit_pc' => [
+                    'label' => 'Jasa Rakit PC',
+                    'desc' => 'Jasa perakitan PC Custom (Gaming/Office)',
+                    'price' => 'Rp 300.000',
+                    'note' => 'Hanya biaya jasa rakit. Komponen bisa beli dari kami atau bawa sendiri.',
                 ],
             ],
         ],

@@ -220,7 +220,7 @@
                             </h4>
 
                             <!-- Add Form -->
-                            <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-white/10 mb-4">
+                            <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-xl border border-gray-200 dark:border-white/10 mb-4 {{ $noPartsNeeded ? 'opacity-50 pointer-events-none' : '' }}">
                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                                     <label class="block text-sm font-semibold text-gray-900 dark:text-white">Tambah Sparepart</label>
 
@@ -272,7 +272,7 @@
                             </div>
 
                             <!-- List -->
-                            <div class="space-y-2 mb-6">
+                            <div class="space-y-2 mb-6 {{ $noPartsNeeded ? 'opacity-50 pointer-events-none' : '' }}">
                                 @forelse($selectedService->serviceSpareparts as $sp)
                                     <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
                                         <div class="flex items-center gap-4">
@@ -306,14 +306,17 @@
                             <!-- Cost Breakdown -->
                             <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-white/10">
                                 <div class="flex items-center justify-between mb-3 text-sm">
+                                    @php
+                                        $rawSparepartCost = $selectedService ? $selectedService->serviceSpareparts->sum(fn($sp) => $sp->qty * $sp->price) : 0;
+                                    @endphp
                                     <span class="text-gray-600 dark:text-gray-400">Total Sparepart</span>
                                     @if($noPartsNeeded)
-                                        <span class="font-medium text-gray-400 dark:text-gray-500 line-through">Rp {{ number_format(($selectedService->total_cost ?? 0) - ($estimatedCost ?? 0), 0, ',', '.') }}</span>
+                                        <span class="font-medium text-gray-400 dark:text-gray-500 line-through">Rp {{ number_format($rawSparepartCost, 0, ',', '.') }}</span>
                                     @else
-                                        <span class="font-medium text-gray-900 dark:text-white">Rp {{ number_format(($selectedService->total_cost ?? 0) - ($estimatedCost ?? 0), 0, ',', '.') }}</span>
+                                        <span class="font-medium text-gray-900 dark:text-white">Rp {{ number_format($rawSparepartCost, 0, ',', '.') }}</span>
                                     @endif
                                 </div>
-                                
+
                                 {{-- Service Packages Selection --}}
                                 <div class="mb-4">
                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
