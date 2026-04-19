@@ -181,8 +181,20 @@
                             </td>
                             <td class="px-6 py-4 font-mono">{{ $service->customer->phone ?? '-' }}</td>
                             <td class="px-6 py-4">{{ $service->device_name }}</td>
-                            <td class="px-6 py-4 max-w-xs truncate" title="{{ $service->diagnosis_result }}">
-                                {{ $service->diagnosis_result ?: '-' }}
+                            <td class="px-6 py-4 max-w-xs truncate">
+                                @if(is_array($service->service_items) && count($service->service_items) > 0)
+                                    @php
+                                        // Collect all unique service names
+                                        $itemNames = collect($service->service_items)
+                                            ->map(fn($item) => is_array($item) && isset($item['name']) ? $item['name'] : (is_string($item) ? $item : ''))
+                                            ->filter()
+                                            ->unique()
+                                            ->join(', ');
+                                    @endphp
+                                    <span title="{{ $itemNames }}">{{ $itemNames ?: ($service->diagnosis_result ?: '-') }}</span>
+                                @else
+                                    <span title="{{ $service->diagnosis_result }}">{{ $service->diagnosis_result ?: '-' }}</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs font-bold rounded-full {{ $service->status === 'Done' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' }}">
