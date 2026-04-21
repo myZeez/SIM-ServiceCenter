@@ -281,11 +281,14 @@ class ServiceForm extends Component
         // Auto-add selected services as service cost for REGULER type
         if ($this->serviceType === 'REGULER' && !empty($this->selectedServiceItems)) {
             $totalServiceCosts = 0;
+            $maxHardwareCost = 0;
 
             foreach ($this->selectedServiceItems as $itemStr) {
                 $price = 0;
+                $itemLabel = '';
 
                 if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
+                    $itemLabel = strtolower(trim($matches[1]));
                     // Clean price string, matching Rp or just numbers
                     $priceString = preg_replace('/[Rp\s\.]/i', '', $matches[2]);
                     if (is_numeric($priceString)) {
@@ -293,8 +296,37 @@ class ServiceForm extends Component
                     }
                 }
 
-                $totalServiceCosts += $price;
+                // Cek apakah item adalah bongkar/pasang hardware
+                $isHardware = false;
+                $hwKeywords = ['upgrade', 'pasang', 'ganti', 'rakit', 'tambah'];
+                $excludeKw  = ['pasta', 'cleaning', 'bersih', 'instal', 'windows', 'software', 'aplikasi', 'flash', 'os'];
+
+                foreach ($hwKeywords as $kw) {
+                    if (str_contains($itemLabel, $kw)) {
+                        $isHardware = true;
+                        break;
+                    }
+                }
+                foreach ($excludeKw as $ex) {
+                    if (str_contains($itemLabel, $ex)) {
+                        $isHardware = false;
+                        break;
+                    }
+                }
+
+                if ($isHardware) {
+                    // Cukup ambil 1x biaya hardware terbesar (flat rate)
+                    if ($price > $maxHardwareCost) {
+                        $maxHardwareCost = $price;
+                    }
+                } else {
+                    // Biaya software / maintenance (ditambah akumulasi)
+                    $totalServiceCosts += $price;
+                }
             }
+
+            // Gabungkan akumulasi biaya lain + 1x biaya pemasangan fisik (hardware)
+            $totalServiceCosts += $maxHardwareCost;
 
             if ($totalServiceCosts > 0) {
                 $service->service_cost = $totalServiceCosts;

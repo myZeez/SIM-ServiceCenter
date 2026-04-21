@@ -94,14 +94,16 @@ class ServiceProgress extends Component
     public function calculateServiceCost()
     {
         $cost = 0;
+        $maxHardwareCost = 0;
+
         foreach ($this->selectedServiceItems as $itemStr) {
             if (preg_match('/^(.*?)\s*\((.*)\)$/', $itemStr, $matches)) {
+                $itemLabel = strtolower(trim($matches[1]));
                 $priceStr = preg_replace('/[^0-9]/', '', $matches[2]);
                 $price = $priceStr === '' ? 0 : (int)$priceStr;
 
                 // --- Fallback handling untuk data lawas (Tergantung spek) ---
                 if ($price === 0) {
-                    $itemLabel = strtolower(trim($matches[1]));
                     if (str_contains($itemLabel, 'upgrade ram') || str_contains($itemLabel, 'upgrade ssd')) {
                         $price = 200000;
                     } elseif (str_contains($itemLabel, 'rakit pc')) {
@@ -109,17 +111,45 @@ class ServiceProgress extends Component
                     }
                 }
 
-                $cost += $price;
+                // Cek apakah item adalah bongkar/pasang hardware tambahan (flat rate)
+                $isHardware = false;
+                $hwKeywords = ['upgrade', 'pasang', 'ganti', 'rakit', 'tambah'];
+                $excludeKw  = ['pasta', 'cleaning', 'bersih', 'instal', 'windows', 'software', 'aplikasi', 'flash', 'os'];
+
+                foreach ($hwKeywords as $kw) {
+                    if (str_contains($itemLabel, $kw)) {
+                        $isHardware = true;
+                        break;
+                    }
+                }
+                foreach ($excludeKw as $ex) {
+                    if (str_contains($itemLabel, $ex)) {
+                        $isHardware = false;
+                        break;
+                    }
+                }
+
+                if ($isHardware) {
+                    // Cukup ambil 1x biaya hardware terbesar
+                    if ($price > $maxHardwareCost) {
+                        $maxHardwareCost = $price;
+                    }
+                } else {
+                    // Biaya software / maintenance / add-on diakumulasi normal
+                    $cost += $price;
+                }
             }
         }
-        $this->estimatedCost = $cost;
+
+        // Totalkan jasa non-hardware dengan single fee biaya pasang (hardware) terbesar
+        $this->estimatedCost = $cost + $maxHardwareCost;
         $this->calculateTotalCost();
 
         // Save automatically back to service cost
         if ($this->selectedService) {
             $this->selectedService->update([
                 'service_items' => $this->selectedServiceItems,
-                'service_cost'  => $cost
+                'service_cost'  => $this->estimatedCost
             ]);
             $this->calculateTotalCost(); // to trigger total_cost update in DB
         }

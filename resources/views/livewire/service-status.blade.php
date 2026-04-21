@@ -188,7 +188,7 @@
                                         <div style="font-size: 0.9em; padding: 2px 0;">• {{ $item }}</div>
                                     @endforeach
                                 @endif
-                                
+
                                 @if($service->serviceSpareparts && $service->serviceSpareparts->count() > 0)
                                     @foreach($service->serviceSpareparts as $part)
                                         <div style="font-size: 0.9em; padding: 2px 0;">
