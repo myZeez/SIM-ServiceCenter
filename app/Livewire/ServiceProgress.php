@@ -446,14 +446,20 @@ class ServiceProgress extends Component
                 $updateData['adp_original_cost'] = $this->adpOriginalCost;
             }
 
+            // Cek apakah status berubah atau ada deskripsi baru
+            $statusChanged = $service->status !== $newStatus;
+            $hasCustomDescription = !empty($this->serviceDescription);
+
             $service->update($updateData);
 
-            // Create log
-            $service->serviceLogs()->create([
-                'user_id' => Auth::id(),
-                'status' => $newStatus,
-                'description' => $this->serviceDescription ?: "Status diubah menjadi {$newStatus}",
-            ]);
+            // Create log hanya jika status berubah atau ada pesan deskripsi manual dari admin
+            if ($statusChanged || $hasCustomDescription) {
+                $service->serviceLogs()->create([
+                    'user_id' => Auth::id(),
+                    'status' => $newStatus,
+                    'description' => $this->serviceDescription ?: "Status diubah menjadi {$newStatus}",
+                ]);
+            }
 
             $waSent = $this->sendWhatsAppNotification($service->id, false);
 
