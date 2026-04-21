@@ -1592,6 +1592,15 @@ class DiagnosisChat extends Component
      */
     public function saveBooking(): void
     {
+        // Rate limiting: 3 bookings per 10 minutes per IP
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts('book:'.request()->ip(), 3)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn('book:'.request()->ip());
+            $this->addMessage("Terlalu banyak percobaan. Silakan coba lagi dalam " . ceil($seconds / 60) . " menit.", 'error');
+            return;
+        }
+        
+        \Illuminate\Support\Facades\RateLimiter::hit('book:'.request()->ip(), 600);
+
         $device = \App\Models\DeviceType::where('slug', $this->selectedDeviceType)->first();
         $deviceLabel = $device ? $device->name : (self::DEVICE_TYPES[$this->selectedDeviceType]['label'] ?? 'Perangkat');
 

@@ -23,6 +23,16 @@ class ServiceStatus extends Component
 
     public function check(): void
     {
+        // Rate limiting: 10 checks per minute per IP
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts('check-status:'.request()->ip(), 10)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn('check-status:'.request()->ip());
+            $this->errorMessage = 'Terlalu banyak permintaan untuk cek status. Silakan coba lagi dalam ' . ceil($seconds) . ' detik.';
+            $this->searched = true;
+            return;
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::hit('check-status:'.request()->ip(), 60);
+
         $this->errorMessage = '';
         $this->service = null;
         $this->booking = null;

@@ -12,8 +12,10 @@ Route::get('/', function () {
 // ========================================
 // PUBLIC ROUTES (TANPA LOGIN)
 // ========================================
-Route::get('/diagnosis', DiagnosisChat::class)->name('diagnosis');
-Route::get('/cek-status', ServiceStatus::class)->name('service-status');
+Route::middleware(['throttle:global'])->group(function () {
+    Route::get('/diagnosis', DiagnosisChat::class)->name('diagnosis');
+    Route::get('/cek-status', ServiceStatus::class)->name('service-status');
+});
 
 // ========================================
 // ADMIN OPERASIONAL ROUTES
