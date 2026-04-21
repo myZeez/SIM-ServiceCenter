@@ -158,13 +158,19 @@
                             <span class="info-value">{{ $service->service_type === 'warranty' ? 'Garansi' : 'Reguler' }}</span>
                         </div>
                         <div class="info-item full">
-                            <span class="info-label">Keluhan</span>
-                            <span class="info-value">{{ $service->complaint ?? '-' }}</span>
+                            <span class="info-label">Keluhan & Catatan Awal</span>
+                            <span class="info-value" style="white-space: pre-wrap;">{{ $service->complaint ?? '-' }}</span>
                         </div>
                         @if($service->diagnosis_result)
                         <div class="info-item full">
                             <span class="info-label">Hasil Diagnosis</span>
                             <span class="info-value diagnosis-val">{{ $service->diagnosis_result }}</span>
+                        </div>
+                        @endif
+                        @if($service->recommendation)
+                        <div class="info-item full">
+                            <span class="info-label">Rekomendasi / Solusi</span>
+                            <span class="info-value recommendation-val">{{ $service->recommendation }}</span>
                         </div>
                         @endif
                         @if($service->user)
@@ -208,7 +214,7 @@
                     <div class="timeline">
                         @foreach($service->serviceLogs->sortByDesc('created_at') as $log)
                         @php
-                            $logSt = $statusMap[$log->status] ?? ['color' => '#94a3b8', 'icon' => '📋', 'label' => ucfirst($log->status)];
+                            $logSt = $statusMap[$log->status] ?? ['color' => '#94a3b8', 'icon' => '📋', 'label' => \Illuminate\Support\Str::title(str_replace('_', ' ', $log->status))];
                         @endphp
                         <div class="timeline-item">
                             <div class="timeline-dot" style="background: {{ $logSt['color'] }}; box-shadow: 0 0 8px {{ $logSt['color'] }}60;"></div>
@@ -296,7 +302,10 @@
                         <div class="info-item"><span class="info-label">Perangkat</span><span class="info-value">{{ $booking->device_brand }} {{ $booking->device_name }}</span></div>
                         <div class="info-item"><span class="info-label">Tanggal Booking</span><span class="info-value">{{ $booking->created_at->format('d M Y, H:i') }}</span></div>
                         @if($booking->complaint)
-                        <div class="info-item full"><span class="info-label">Keluhan</span><span class="info-value">{{ $booking->complaint }}</span></div>
+                        <div class="info-item full"><span class="info-label">Keluhan & Diagnosis Sistem</span><span class="info-value" style="white-space: pre-wrap;">{{ $booking->complaint }}</span></div>
+                        @endif
+                        @if($booking->ai_recommendation)
+                        <div class="info-item full"><span class="info-label">Rekomendasi Sistem</span><span class="info-value recommendation-val">{{ $booking->ai_recommendation }}</span></div>
                         @endif
                     </div>
                     <div class="ready-notice" style="background:rgba(14,165,233,0.07);border-color:rgba(14,165,233,0.2);margin-top:8px;">

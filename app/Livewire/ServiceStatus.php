@@ -44,6 +44,24 @@ class ServiceStatus extends Component
             // Fall back to booking code (BK-...)
             if (!$this->service) {
                 $this->booking = Booking::where('booking_code', $query)->first();
+
+                // If booking is found, check if a Service was created for this same phone number recently
+                if ($this->booking && in_array($this->booking->status, ['confirmed', 'in_progress', 'completed'])) {
+                    $customer = Customer::where('phone', $this->booking->phone)->first();
+                    if ($customer) {
+                        // Find a service created after the booking
+                        $relatedService = Service::with(['customer', 'user', 'serviceLogs.user'])
+                            ->where('customer_id', $customer->id)
+                            ->where('created_at', '>=', $this->booking->created_at)
+                            ->latest()
+                            ->first();
+
+                        if ($relatedService) {
+                            $this->service = $relatedService;
+                            $this->booking = null; // Prioritize showing the service
+                        }
+                    }
+                }
             }
         } else {
             // Phone search: check service customer
