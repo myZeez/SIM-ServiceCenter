@@ -1598,7 +1598,7 @@ class DiagnosisChat extends Component
             $this->addMessage("Terlalu banyak percobaan. Silakan coba lagi dalam " . ceil($seconds / 60) . " menit.", 'error');
             return;
         }
-        
+
         \Illuminate\Support\Facades\RateLimiter::hit('book:'.request()->ip(), 600);
 
         $device = \App\Models\DeviceType::where('slug', $this->selectedDeviceType)->first();

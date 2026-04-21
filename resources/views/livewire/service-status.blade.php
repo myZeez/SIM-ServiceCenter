@@ -179,15 +179,30 @@
                             <span class="info-value">{{ $service->user->name }}</span>
                         </div>
                         @endif
-                        @if($service->estimated_cost)
-                        <div class="info-item">
-                            <span class="info-label">Estimasi Biaya</span>
-                            <span class="info-value cost-val">Rp {{ number_format($service->estimated_cost, 0, ',', '.') }}</span>
+                        @if($service->service_items || ($service->serviceSpareparts && $service->serviceSpareparts->count() > 0))
+                        <div class="info-item full">
+                            <span class="info-label">Rincian Tindakan & Spartpart</span>
+                            <div class="breakdown-list">
+                                @if($service->service_items)
+                                    @foreach($service->service_items as $item)
+                                        <div style="font-size: 0.9em; padding: 2px 0;">• {{ $item }}</div>
+                                    @endforeach
+                                @endif
+                                
+                                @if($service->serviceSpareparts && $service->serviceSpareparts->count() > 0)
+                                    @foreach($service->serviceSpareparts as $part)
+                                        <div style="font-size: 0.9em; padding: 2px 0;">
+                                            • {{ $part->sparepart->name ?? 'Sparepart' }} ({{ $part->qty }}x) - Rp {{ number_format($part->price * $part->qty, 0, ',', '.') }}
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </div>
                         </div>
                         @endif
-                        @if($service->status === 'completed' || $service->status === 'taken')
+
+                        @if($service->status === 'completed' || $service->status === 'taken' || $service->total_cost > 0)
                         <div class="info-item">
-                            <span class="info-label">Total Biaya</span>
+                            <span class="info-label">Estimasi / Total Biaya</span>
                             <span class="info-value cost-val final">Rp {{ number_format($service->total_cost ?? 0, 0, ',', '.') }}</span>
                         </div>
                         @endif

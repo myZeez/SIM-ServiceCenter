@@ -47,22 +47,20 @@ class ServiceStatus extends Component
 
         if ($this->searchType === 'ticket') {
             // Try service ticket first
-            $this->service = Service::with(['customer', 'user', 'serviceLogs.user'])
+            $this->service = Service::with(['customer', 'user', 'serviceLogs.user', 'serviceSpareparts.sparepart'])
                 ->where('ticket_number', $query)
                 ->first();
 
             // Fall back to booking code (BK-...)
             if (!$this->service) {
                 $this->booking = Booking::where('booking_code', $query)->first();
-
+                
                 // If booking is found, check if a Service was created for this same phone number recently
                 if ($this->booking && in_array($this->booking->status, ['confirmed', 'in_progress', 'completed'])) {
                     $customer = Customer::where('phone', $this->booking->phone)->first();
                     if ($customer) {
                         // Find a service created after the booking
-                        $relatedService = Service::with(['customer', 'user', 'serviceLogs.user'])
-                            ->where('customer_id', $customer->id)
-                            ->where('created_at', '>=', $this->booking->created_at)
+                        $relatedService = Service::with(['customer', 'user', 'serviceLogs.user', 'serviceSpareparts.sparepart'])
                             ->latest()
                             ->first();
 
@@ -77,7 +75,7 @@ class ServiceStatus extends Component
             // Phone search: check service customer
             $customer = Customer::where('phone', $query)->first();
             if ($customer) {
-                $this->service = Service::with(['customer', 'user', 'serviceLogs.user'])
+                $this->service = Service::with(['customer', 'user', 'serviceLogs.user', 'serviceSpareparts.sparepart'])
                     ->where('customer_id', $customer->id)
                     ->latest()
                     ->first();
