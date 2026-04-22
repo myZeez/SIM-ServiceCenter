@@ -75,6 +75,37 @@
             <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Rp {{ number_format($summary['total_sparepart'], 0, ',', '.') }}</h3>
         </div>
     </div>
+
+    {{-- Technician Summary Cards --}}
+    @if(count($technicianReports) > 0)
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6 mt-4">
+        <h4 class="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Omset per Teknisi
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach($technicianReports as $tech)
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
+                <p class="font-bold text-gray-900 dark:text-white text-base mb-3">{{ $tech['name'] }}</p>
+                <div class="space-y-1 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Total Servis</span>
+                        <span class="font-semibold">{{ $tech['service_count'] }} unit</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Omset (Total Jasa)</span>
+                        <span class="font-semibold text-indigo-600">Rp {{ number_format($tech['total_jasa'], 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Komisi Teknisi</span>
+                        <span class="font-semibold text-green-600">Rp {{ number_format($tech['total_commission'], 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
     @else
     {{-- ===================== AUTHORIZED SUMMARY CARDS ===================== --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
