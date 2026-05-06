@@ -146,7 +146,8 @@ class ForwardChainingEngine
             ->whereNotIn('id', $this->askedQuestions);
 
         // Terapkan question filter jika ada (hanya tampilkan pertanyaan yang relevan)
-        if (!empty($this->questionFilter)) {
+        $useFilter = !empty($this->questionFilter);
+        if ($useFilter) {
             $query->whereIn('order', $this->questionFilter);
         }
 
@@ -163,6 +164,22 @@ class ForwardChainingEngine
             if (!$q->symptom) return true;
             return !$this->facts->contains('id', $q->symptom->id);
         });
+
+        // Jika pertanyaan habis karena filter, tetapi belum mencapai batas minimal (4 pertanyaan),
+        // lepas filter dan ambil pertanyaan lain di kategori yang sama
+        if ($questions->isEmpty() && $useFilter && count($this->askedQuestions) < 4) {
+            $fallbackQuery = CategoryQuestion::where('category', $this->currentCategory)
+                ->where('device_type', $this->deviceType)
+                ->whereNotIn('id', $this->askedQuestions);
+
+            $questions = $fallbackQuery->orderBy('order')
+                ->with('symptom')
+                ->get()
+                ->filter(function ($q) {
+                    if (!$q->symptom) return true;
+                    return !$this->facts->contains('id', $q->symptom->id);
+                });
+        }
 
         if ($questions->isEmpty()) {
             return null;
@@ -351,20 +368,34 @@ class ForwardChainingEngine
         $answeredCount = count($this->askedQuestions);
         $noMoreQuestions = $this->getNextQuestion() === null;
 
+        // Jika tidak ada lagi pertanyaan yang relevan, ya sudah kita diagnosis
         if ($noMoreQuestions) {
             return true;
         }
 
-        // Minimal 4-5 pertanyaan untuk mengambil fakta
-        if ($answeredCount < 4) {
+        // Jangan gegabah sebelum menanyakan minimal 2 soal
+        if ($answeredCount < 2) {
             return false;
         }
 
-        // Jika sudah mencapai 4 pertanyaan dan punya minimal 2 gejala, ready for diagnosis.
-        // Ini memastikan interaksi forward chaining berkisar di 4-5 pertanyaan.
-        $hasEnoughFacts = $this->facts->count() >= 2;
+        // Lakukan "intipan" (peek) hasil inferensi sementara (tanpa mengubah state)
+        if ($this->facts->count() >= 1) {
+            $peekResult = $this->runInference();
+            
+            // ADAPTIVE THRESHOLDING: 
+            // Jika CF tertinggi sudah sangat meyakinkan (misal >= 85%), 
+            // kita bisa berhenti lebih cepat secara otomatis!
+            if (isset($peekResult['diagnoses']) && count($peekResult['diagnoses']) > 0) {
+                $topDiagnosis = $peekResult['diagnoses'][0];
+                if ($topDiagnosis['confidence'] >= 85) {
+                    return true; // Berhenti awal (Early Stopping) karena sistem sudah cukup yakin
+                }
+            }
+        }
 
-        return $hasEnoughFacts;
+        // Jika CF masih rendah (kurang dari 85%), sistem akan MEMAKSA bertanya terus 
+        // sampai batas masksimal dari frontend / Livewire (yaitu 5 soal).
+        return false;
     }
 
     // ================================================================

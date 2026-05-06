@@ -36,10 +36,7 @@ class BackwardChainingEngine
     private array $verificationLog = [];       // Log of verification steps
     private int $maxVerificationQuestions = 3; // Max BC verification questions
 
-    /** Confidence threshold: skip BC if FC top confidence >= this */
-    private float $skipThreshold = 0.75;
-
-    public function __construct(string $deviceType = 'laptop')
+    private int $maxVerificationQuestions = 3; // Max BC verification questions
     {
         $this->deviceType = $deviceType;
     }
@@ -129,23 +126,31 @@ class BackwardChainingEngine
     {
         if (empty($this->hypotheses)) return true;
 
-        // Cek apakah top hypothesis sudah sangat yakin
-        $topConfidence = ($this->hypotheses[0]['original_confidence'] ?? 0) / 100;
-        if ($topConfidence >= $this->skipThreshold) {
-            return true;
-        }
+        // VERIFIKASI WAJIB: Kita HAPUS pengecekan skipThreshold di sini.
+        // Berapa pun nilai CF-nya (walau 99%), sistem TETAP harus melakukan
+        // verifikasi gejala yang belum terpenuhi untuk memastikan hipotesis.
 
-        // Cek apakah ada missing symptoms yang bisa ditanyakan
+        // Cek apakah masih ada missing symptoms yang bisa ditanyakan.
+        // Jika semua gejala yang dibutuhkan oleh hipotesis sudah terpenuhi / ditanyakan,
+        // baru kita boleh melakukan skip.
+        $hasMissing = false;
         foreach ($this->hypotheses as $hyp) {
             $askable = array_diff(
                 $hyp['missing_symptom_ids'],
                 $this->confirmedSymptomIds,
                 $this->askedSymptomIds
             );
-            if (!empty($askable)) return false;
+            if (!empty($askable)) {
+                $hasMissing = true;
+                break;
+            }
         }
 
-        return true; // Tidak ada yang bisa ditanyakan
+        if (!$hasMissing) {
+            return true; // Hanya skip jika BENAR-BENAR tidak ada gejala yang tersisa untuk divrifikasi
+        }
+
+        return false;
     }
 
     /**
