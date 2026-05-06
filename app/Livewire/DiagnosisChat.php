@@ -38,7 +38,7 @@ class DiagnosisChat extends Component
     public ?array $diagnosisResult = null;
     public ?array $currentQuestion = null;
     public int $questionCount = 0;
-    public int $maxQuestions = 3;
+    public int $maxQuestions = 5; // 4-5 fakta
     public array $answeredQuestions = [];
 
     // Engine state (serialized for Livewire lifecycle)
@@ -1174,7 +1174,7 @@ class DiagnosisChat extends Component
         }
 
         // ===== LIMITED / VERIFY_ONLY: Pertanyaan terbatas =====
-        $this->maxQuestions = $config['max_questions'] ?? 3;
+        $this->maxQuestions = $config['max_questions'] ?? 5; // 4-5 untuk forward chaining
 
         // Load question filter untuk sub-keluhan ini
         $configKey = "{$this->selectedCategoryKey}.{$this->selectedProblemKey}";
@@ -1226,7 +1226,7 @@ class DiagnosisChat extends Component
                 $this->selectedProblemKey = null;
                 $this->currentQuestion = null;
                 $this->questionCount = 0;
-                $this->maxQuestions = 3;
+                $this->maxQuestions = 5;
                 $this->answeredQuestions = [];
                 $this->engineState = [];
                 $this->collectedSymptoms = [];
@@ -1252,7 +1252,7 @@ class DiagnosisChat extends Component
                 $this->selectedProblemKey = null;
                 $this->currentQuestion = null;
                 $this->questionCount = 0;
-                $this->maxQuestions = 3;
+                $this->maxQuestions = 5;
                 $this->answeredQuestions = [];
                 $this->engineState = [];
                 $this->collectedSymptoms = [];
@@ -1695,7 +1695,7 @@ class DiagnosisChat extends Component
         $this->bcVerified = false;
         $this->directDiagnosisConfig = [];
         $this->skipBcVerification = false;
-        $this->maxQuestions = 3;
+        $this->maxQuestions = 5;
         $this->selectedServiceCategory = null;
         $this->selectedServiceKey = null;
         $this->selectedServiceData = null;

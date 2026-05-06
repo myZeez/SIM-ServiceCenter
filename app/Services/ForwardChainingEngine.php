@@ -349,17 +349,22 @@ class ForwardChainingEngine
     public function isReadyForDiagnosis(): bool
     {
         $answeredCount = count($this->askedQuestions);
+        $noMoreQuestions = $this->getNextQuestion() === null;
 
-        // Minimal 2 pertanyaan harus dijawab
-        if ($answeredCount < 2) {
+        if ($noMoreQuestions) {
+            return true;
+        }
+
+        // Minimal 4-5 pertanyaan untuk mengambil fakta
+        if ($answeredCount < 4) {
             return false;
         }
 
-        // Ready jika cukup gejala atau tidak ada pertanyaan lagi
+        // Jika sudah mencapai 4 pertanyaan dan punya minimal 2 gejala, ready for diagnosis.
+        // Ini memastikan interaksi forward chaining berkisar di 4-5 pertanyaan.
         $hasEnoughFacts = $this->facts->count() >= 2;
-        $noMoreQuestions = $this->getNextQuestion() === null;
 
-        return $hasEnoughFacts || $noMoreQuestions;
+        return $hasEnoughFacts;
     }
 
     // ================================================================
