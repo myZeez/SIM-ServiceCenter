@@ -381,9 +381,9 @@ class ForwardChainingEngine
         // Lakukan "intipan" (peek) hasil inferensi sementara (tanpa mengubah state)
         if ($this->facts->count() >= 1) {
             $peekResult = $this->runInference();
-            
-            // ADAPTIVE THRESHOLDING: 
-            // Jika CF tertinggi sudah sangat meyakinkan (misal >= 85%), 
+
+            // ADAPTIVE THRESHOLDING:
+            // Jika CF tertinggi sudah sangat meyakinkan (misal >= 85%),
             // kita bisa berhenti lebih cepat secara otomatis!
             if (isset($peekResult['diagnoses']) && count($peekResult['diagnoses']) > 0) {
                 $topDiagnosis = $peekResult['diagnoses'][0];
@@ -393,7 +393,7 @@ class ForwardChainingEngine
             }
         }
 
-        // Jika CF masih rendah (kurang dari 85%), sistem akan MEMAKSA bertanya terus 
+        // Jika CF masih rendah (kurang dari 85%), sistem akan MEMAKSA bertanya terus
         // sampai batas masksimal dari frontend / Livewire (yaitu 5 soal).
         return false;
     }

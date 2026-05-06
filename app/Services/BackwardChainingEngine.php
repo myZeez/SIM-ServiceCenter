@@ -36,7 +36,7 @@ class BackwardChainingEngine
     private array $verificationLog = [];       // Log of verification steps
     private int $maxVerificationQuestions = 3; // Max BC verification questions
 
-    private int $maxVerificationQuestions = 3; // Max BC verification questions
+    public function __construct(string $deviceType = 'laptop')
     {
         $this->deviceType = $deviceType;
     }
