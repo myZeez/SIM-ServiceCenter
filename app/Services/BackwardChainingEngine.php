@@ -502,11 +502,27 @@ class BackwardChainingEngine
         // Sort by adjusted confidence (descending)
         usort($finalDiagnoses, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
 
-        // Filter out diagnoses with very low confidence (< 5%)
+        // Jika user menjawab "Tidak" terus menerus di BC dan confidence drop terlalu rendah
+        // Biarkan tetap tampilkan sebagai weak fallback drpd kosong
+        // Tetapi kita filter yg di bawah 5%
         $finalDiagnoses = array_values(array_filter(
             $finalDiagnoses,
             fn($d) => $d['confidence'] >= 5
         ));
+
+        // Fallback no_match if all ruled out (Sangat jarang terjadi)
+        if (empty($finalDiagnoses)) {
+             return [
+                'status' => 'no_match',
+                'message' => 'Tidak dapat menentukan diagnosis spesifik setelah verifikasi. Diperlukan pemeriksaan lebih lanjut oleh teknisi.',
+                'diagnoses' => [],
+                'method' => 'hybrid_fc_bc',
+                'verification_log' => $this->verificationLog,
+                'total_verifications' => count($this->askedSymptomIds),
+                'total_confirmed' => count($this->verifiedSymptomIds),
+                'total_denied' => count($this->deniedSymptomIds),
+            ];
+        }
 
         return [
             'status' => 'success',

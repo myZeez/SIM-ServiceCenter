@@ -592,6 +592,7 @@ class ForwardChainingEngine
             'cost_range' => $d->cost_range,
             'confidence' => 50,
             'matched_symptoms' => $this->facts->pluck('name')->toArray(),
+            'low_confidence_fallback' => true,
         ])->toArray();
 
         return [

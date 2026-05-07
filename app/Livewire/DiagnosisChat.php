@@ -518,14 +518,12 @@ class DiagnosisChat extends Component
         // Layar pecah/retak → pasti kerusakan fisik LCD, langsung ganti
         'layar.pecah' => [
             'type' => 'direct',
-            'override_symptoms' => ['G005'],
             'skip_bc' => true,
             'direct_note' => 'Layar pecah/retak sudah pasti kerusakan fisik pada panel LCD dan harus diganti baru.',
         ],
         // Bercak putih/hitam → indikasi white spot atau dead pixel
         'layar.bercak' => [
             'type' => 'direct',
-            'override_symptoms' => ['G109', 'G110'],
             'skip_bc' => true,
             'direct_note' => 'Bercak putih atau titik hitam di layar sudah mengindikasikan white spot atau dead pixel pada panel LCD.',
         ],
@@ -534,7 +532,6 @@ class DiagnosisChat extends Component
         // Keyboard mengetik sendiri → short circuit pada keyboard fisik
         'input.kb_ketik_sendiri' => [
             'type' => 'verify_only',
-            'override_symptoms' => ['G011'],
             'skip_bc' => true,
             'max_questions' => 1,
             'direct_note' => 'Keyboard mengetik sendiri sudah dipastikan terjadi short circuit pada jalur keyboard fisik.',
@@ -542,7 +539,6 @@ class DiagnosisChat extends Component
         // Tombol mati sebagian → jalur putus pada PCB keyboard
         'input.kb_sebagian' => [
             'type' => 'verify_only',
-            'override_symptoms' => ['G010'],
             'skip_bc' => true,
             'max_questions' => 1,
             'direct_note' => 'Beberapa tombol tidak berfungsi mengindikasikan ada jalur yang putus pada PCB keyboard.',
@@ -553,7 +549,6 @@ class DiagnosisChat extends Component
         // Kemungkinan kerusakan: keyboard, mainboard, RAM, SSD/HDD, display
         'daya.mati_total' => [
             'type' => 'limited',
-            'override_symptoms' => ['G023'],
             'skip_bc' => false,
             'max_questions' => 3,
             'direct_note' => 'Laptop mati total bisa disebabkan oleh beberapa komponen: keyboard, mainboard, RAM, SSD/HDD, atau display.',
@@ -563,14 +558,12 @@ class DiagnosisChat extends Component
         // Baterai kembung → pasti rusak, harus segera diganti
         'daya.kembung' => [
             'type' => 'direct',
-            'override_symptoms' => ['G081'],
             'skip_bc' => true,
             'direct_note' => 'Baterai kembung sudah PASTI RUSAK dan HARUS SEGERA DIGANTI. Penggunaan baterai kembung sangat berbahaya karena risiko kebakaran.',
         ],
         // Baterai cepat habis → kesehatan menurun, tanya pertanyaan logis
         'daya.boros' => [
             'type' => 'limited',
-            'override_symptoms' => ['G026'],
             'skip_bc' => false,
             'max_questions' => 2,
             'direct_note' => 'Baterai cepat habis biasanya karena kesehatan baterai sudah menurun secara signifikan.',
@@ -578,7 +571,6 @@ class DiagnosisChat extends Component
         // Baterai drop/loncat → kesehatan menurun
         'daya.drop' => [
             'type' => 'limited',
-            'override_symptoms' => ['G083', 'G026'],
             'skip_bc' => false,
             'max_questions' => 2,
             'direct_note' => 'Persentase baterai tidak akurat dan cepat habis menunjukkan kesehatan baterai sudah menurun.',
@@ -586,7 +578,6 @@ class DiagnosisChat extends Component
         // Hanya nyala pakai charger → pasti baterai rusak
         'daya.charger_only' => [
             'type' => 'direct',
-            'override_symptoms' => ['G024', 'G152'],
             'skip_bc' => true,
             'direct_note' => 'Laptop hanya bisa nyala menggunakan charger, sudah dipastikan baterai rusak dan perlu diganti.',
         ],
@@ -595,7 +586,6 @@ class DiagnosisChat extends Component
         // Lemot → biasanya HDD, kalau SSD cek prosesor & RAM, pertimbangkan downgrade Windows
         'software.lemot' => [
             'type' => 'limited',
-            'override_symptoms' => ['G040'],
             'skip_bc' => false,
             'max_questions' => 3,
             'direct_note' => 'Laptop lemot biasanya disebabkan oleh penggunaan HDD (belum SSD), RAM kurang, atau prosesor entry-level (Celeron/Pentium) dengan Windows 11 yang terlalu berat. Jika memungkinkan, pertimbangkan upgrade ke SSD dan/atau downgrade Windows untuk spek rendah.',
@@ -1117,8 +1107,8 @@ class DiagnosisChat extends Component
         $deviceType = $this->getEngineDeviceType();
         $engineCategory = $problem['engine_category'] ?? $category['engine_category'];
 
-        // Gunakan override_symptoms jika ada, kalau tidak pakai symptoms dari problem
-        $symptomCodes = $config['override_symptoms'] ?? $problem['symptoms'];
+        // Gunakan symptoms dari problem (sudah spesifik per device type)
+        $symptomCodes = $problem['symptoms'];
 
         // Load symptoms dari database
         $symptoms = Symptom::where('device_type', $deviceType)
