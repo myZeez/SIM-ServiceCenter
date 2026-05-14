@@ -86,7 +86,7 @@
                 <p class="text-xs text-gray-500 mb-2">Upload untuk mengganti logo aplikasi (Format: PNG, JPG, maks 1MB).</p>
 
                 @if ($currentLogo)
-                    @php $currentLogoUrl = \App\Models\Setting::logoUrl($currentLogo); @endphp
+                    @php $currentLogoUrl = \App\Models\Setting::appLogoUrl(); @endphp
                     <div class="mb-3">
                         <img src="{{ $currentLogoUrl }}" alt="Current Logo" class="h-12 w-auto object-contain rounded" onerror="this.style.display='none'">
                     </div>

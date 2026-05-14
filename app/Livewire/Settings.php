@@ -60,7 +60,7 @@ class Settings extends Component
         $this->adminFee = Setting::where('key', 'admin_fee_per_invoice')->value('value') ?? 20000;
         $this->techCommission = Setting::where('key', 'technician_commission_percent')->value('value') ?? 50;
         $this->techTarget = Setting::where('key', 'technician_monthly_target')->value('value') ?? 3000000;
-        $this->currentLogo = Setting::appLogoPath();
+        $this->currentLogo = filled(Setting::appLogoPath());
     }
 
     public function loadUsers()
@@ -81,26 +81,25 @@ class Settings extends Component
 
         if ($this->logo) {
             try {
-                $oldLogo = $this->currentLogo;
-                $extension = strtolower($this->logo->getClientOriginalExtension() ?: $this->logo->extension() ?: 'png');
-                $filename = Str::uuid() . '.' . $extension;
-                $path = $this->logo->storeAs('logos', $filename, 'public_uploads');
+                $oldLogo = Setting::appLogoPath();
+                $mimeType = $this->logo->getMimeType() ?: $this->logo->getClientMimeType() ?: 'image/png';
+                $logoValue = 'data:' . $mimeType . ';base64,' . base64_encode($this->logo->get());
             } catch (Throwable $exception) {
                 report($exception);
-                $this->addError('logo', 'Logo gagal disimpan. Cek permission folder public/storage di hosting.');
+                $this->addError('logo', 'Logo gagal diproses. Coba upload ulang dengan file PNG atau JPG.');
                 return;
             }
 
-            if (! $path) {
-                $this->addError('logo', 'Logo gagal disimpan. Cek permission folder public/storage di hosting.');
+            if (blank($logoValue)) {
+                $this->addError('logo', 'Logo gagal diproses. Coba upload ulang dengan file PNG atau JPG.');
                 return;
             }
 
-            Setting::updateOrCreate(['key' => 'app_logo'], ['value' => $path]);
-            $this->currentLogo = $path;
+            Setting::updateOrCreate(['key' => 'app_logo'], ['value' => $logoValue]);
+            $this->currentLogo = true;
             $this->logo = null;
 
-            if (! empty($oldLogo) && $oldLogo !== $path) {
+            if (! empty($oldLogo) && $oldLogo !== $logoValue) {
                 $this->deleteLogoFile($oldLogo);
             }
         }
@@ -110,7 +109,7 @@ class Settings extends Component
 
     private function deleteLogoFile(?string $path): void
     {
-        if (blank($path)) {
+        if (blank($path) || Str::startsWith($path, ['data:image/', 'http://', 'https://', '/'])) {
             return;
         }
 

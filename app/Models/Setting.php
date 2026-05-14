@@ -33,8 +33,6 @@ class Setting extends Model
             return $path;
         }
 
-        $path = Str::after($path, 'storage/');
-
-        return asset('storage/' . ltrim($path, '/'));
+        return route('system.logo', ['v' => substr(md5($path), 0, 10)]);
     }
 }

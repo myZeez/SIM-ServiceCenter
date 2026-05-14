@@ -3,11 +3,50 @@
 use App\Http\Controllers\ProfileController;
 use App\Livewire\DiagnosisChat;
 use App\Livewire\ServiceStatus;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/system-logo', function () {
+    $path = Setting::appLogoPath();
+
+    if (blank($path) || Str::startsWith($path, ['http://', 'https://', '/'])) {
+        abort(404);
+    }
+
+    if (Str::startsWith($path, 'data:image/')) {
+        if (! preg_match('/^data:(image\/(?:png|jpe?g));base64,(.+)$/', $path, $matches)) {
+            abort(404);
+        }
+
+        $contents = base64_decode($matches[2], true);
+
+        if ($contents === false) {
+            abort(404);
+        }
+
+        return response($contents, 200)
+            ->header('Content-Type', $matches[1])
+            ->header('Cache-Control', 'public, max-age=3600');
+    }
+
+    $path = Str::after($path, 'storage/');
+
+    foreach (['public_uploads', 'public'] as $disk) {
+        if (Storage::disk($disk)->exists($path)) {
+            return response(Storage::disk($disk)->get($path), 200)
+                ->header('Content-Type', Storage::disk($disk)->mimeType($path) ?: 'image/png')
+                ->header('Cache-Control', 'public, max-age=3600');
+        }
+    }
+
+    abort(404);
+})->name('system.logo');
 
 // ========================================
 // PUBLIC ROUTES (TANPA LOGIN)
