@@ -73,7 +73,12 @@
         <div class="anim-up">
             <div class="hero-block">
                 <div class="hero-icon">
-                    <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    @if ($appLogoUrl)
+                        <img src="{{ $appLogoUrl }}" alt="Logo" class="hero-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <svg style="display: none;" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    @else
+                        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    @endif
                 </div>
                 <h1 class="hero-title">Halo! Mau servis apa? <span class="hero-emoji">👋</span></h1>
                 <p class="hero-sub">Pilih jenis perangkat yang bermasalah</p>
@@ -1171,6 +1176,12 @@
         margin: 0 auto 20px;
         box-shadow: 0 20px 60px var(--accent-glow);
         color: #fff;
+    }
+    .hero-logo {
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+        border-radius: 14px;
     }
     .hero-title {
         font-size: clamp(22px, 4vw, 36px);
