@@ -7,9 +7,9 @@
 
     <title>{{ $title ?? 'AI Diagnosis - Cellcom Service Center' }}</title>
 
-    @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
-    @if ($appLogo)
-        <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . $appLogo) }}">
+    @php $appLogoUrl = \App\Models\Setting::appLogoUrl(); @endphp
+    @if ($appLogoUrl)
+        <link rel="icon" href="{{ $appLogoUrl }}">
     @endif
 
     <!-- Fonts -->

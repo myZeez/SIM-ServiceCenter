@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class Settings extends Component
 {
@@ -44,7 +45,7 @@ class Settings extends Component
         'adminFee' => 'required|numeric|min:0',
         'techCommission' => 'required|numeric|min:0|max:100',
         'techTarget' => 'required|numeric|min:0',
-        'logo' => 'nullable|image|max:1024',
+        'logo' => 'nullable|image|mimes:png,jpg,jpeg|max:1024',
     ];
 
     public function mount()
@@ -59,7 +60,7 @@ class Settings extends Component
         $this->adminFee = Setting::where('key', 'admin_fee_per_invoice')->value('value') ?? 20000;
         $this->techCommission = Setting::where('key', 'technician_commission_percent')->value('value') ?? 50;
         $this->techTarget = Setting::where('key', 'technician_monthly_target')->value('value') ?? 3000000;
-        $this->currentLogo = Setting::where('key', 'app_logo')->value('value') ?? null;
+        $this->currentLogo = Setting::appLogoPath();
     }
 
     public function loadUsers()
@@ -79,13 +80,47 @@ class Settings extends Component
         Setting::updateOrCreate(['key' => 'technician_monthly_target'], ['value' => $this->techTarget]);
 
         if ($this->logo) {
-            $path = $this->logo->store('logos', 'public');
+            try {
+                $oldLogo = $this->currentLogo;
+                $extension = strtolower($this->logo->getClientOriginalExtension() ?: $this->logo->extension() ?: 'png');
+                $filename = Str::uuid() . '.' . $extension;
+                $path = $this->logo->storeAs('logos', $filename, 'public_uploads');
+            } catch (Throwable $exception) {
+                report($exception);
+                $this->addError('logo', 'Logo gagal disimpan. Cek permission folder public/storage di hosting.');
+                return;
+            }
+
+            if (! $path) {
+                $this->addError('logo', 'Logo gagal disimpan. Cek permission folder public/storage di hosting.');
+                return;
+            }
+
             Setting::updateOrCreate(['key' => 'app_logo'], ['value' => $path]);
             $this->currentLogo = $path;
             $this->logo = null;
+
+            if (! empty($oldLogo) && $oldLogo !== $path) {
+                $this->deleteLogoFile($oldLogo);
+            }
         }
 
         session()->flash('message', 'Pengaturan global berhasil disimpan.');
+    }
+
+    private function deleteLogoFile(?string $path): void
+    {
+        if (blank($path)) {
+            return;
+        }
+
+        $path = Str::after($path, 'storage/');
+
+        foreach (['public_uploads', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        }
     }
 
     // User Management Functions

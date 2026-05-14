@@ -7,9 +7,9 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
-        @if ($appLogo)
-            <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
+        @php $appLogoUrl = \App\Models\Setting::appLogoUrl(); @endphp
+        @if ($appLogoUrl)
+            <link rel="icon" href="{{ $appLogoUrl }}">
         @endif
 
         <!-- Fonts -->
@@ -30,9 +30,8 @@
             <div class="relative w-full max-w-md">
                 <!-- Logo Section -->
                 <div class="text-center mb-8 animate-fade-in">
-                    @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
-                    @if ($appLogo)
-                        <img src="{{ asset('storage/' . $appLogo) }}" alt="Cellcom Logo" class="w-20 auto object-contain mx-auto mb-4 transform hover:scale-105 transition-all duration-300" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff&size=100';">
+                    @if ($appLogoUrl)
+                        <img src="{{ $appLogoUrl }}" alt="Cellcom Logo" class="w-20 h-20 object-contain mx-auto mb-4 transform hover:scale-105 transition-all duration-300" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff&size=100';">
                     @else
                         <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl shadow-2xl mb-4 transform hover:scale-105 transition-all duration-300">
                             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

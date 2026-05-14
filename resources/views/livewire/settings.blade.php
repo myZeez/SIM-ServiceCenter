@@ -86,12 +86,13 @@
                 <p class="text-xs text-gray-500 mb-2">Upload untuk mengganti logo aplikasi (Format: PNG, JPG, maks 1MB).</p>
 
                 @if ($currentLogo)
+                    @php $currentLogoUrl = \App\Models\Setting::logoUrl($currentLogo); @endphp
                     <div class="mb-3">
-                        <img src="{{ asset('storage/' . $currentLogo) }}" alt="Current Logo" class="h-12 w-auto object-contain rounded" onerror="this.style.display='none'">
+                        <img src="{{ $currentLogoUrl }}" alt="Current Logo" class="h-12 w-auto object-contain rounded" onerror="this.style.display='none'">
                     </div>
                 @endif
 
-                <input type="file" wire:model="logo" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300 hover:file:bg-primary-100 mb-2">
+                <input type="file" wire:model="logo" accept="image/png,image/jpeg" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-300 hover:file:bg-primary-100 mb-2">
 
                 <div wire:loading wire:target="logo" class="text-xs text-blue-500 mt-1">Mengunggah logo...</div>
 
@@ -104,7 +105,7 @@
                 @error('logo') <span class="text-red-500 text-xs truncate">{{ $message }}</span> @enderror
             </div>
 
-            <button type="submit" class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 transition">
+            <button type="submit" wire:loading.attr="disabled" wire:target="logo,saveSettings" class="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition">
                 Simpan Konfigurasi
             </button>
         </form>

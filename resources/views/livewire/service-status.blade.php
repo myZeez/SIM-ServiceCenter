@@ -14,9 +14,9 @@
         {{-- Top Bar --}}
         <div class="top-bar">
             <a href="{{ route('diagnosis') }}" class="brand">
-                @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
-                @if ($appLogo)
-                    <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                @php $appLogoUrl = \App\Models\Setting::appLogoUrl(); @endphp
+                @if ($appLogoUrl)
+                    <img src="{{ $appLogoUrl }}" alt="Logo" class="w-5 h-5 object-contain mr-1 rounded-sm" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div class="brand-dot" style="display: none;"></div>
                 @else
                     <div class="brand-dot"></div>

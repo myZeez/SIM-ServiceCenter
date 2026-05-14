@@ -16,9 +16,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', 'Cellcom') }}</title>
 
-        @php $appLogo = \App\Models\Setting::where('key', 'app_logo')->value('value'); @endphp
-        @if ($appLogo)
-            <link rel="icon" type="image/x-icon" href="{{ Storage::url($appLogo) }}">
+        @php $appLogoUrl = \App\Models\Setting::appLogoUrl(); @endphp
+        @if ($appLogoUrl)
+            <link rel="icon" href="{{ $appLogoUrl }}">
         @endif
 
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -37,9 +37,9 @@
                 {{-- Logo --}}
                 <div class="flex items-center h-16 px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3 min-w-0 w-full">
-                        @if ($appLogo)
+                        @if ($appLogoUrl)
                             <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-                                <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
+                                <img src="{{ $appLogoUrl }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
                             </div>
                         @else
                             <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
@@ -278,11 +278,15 @@
                         </button>
                         {{-- Cellcom logo (mobile) --}}
                         <div class="md:hidden flex items-center gap-2">
-                            <div class="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
+                            @if ($appLogoUrl)
+                                <img src="{{ $appLogoUrl }}" alt="Logo" class="w-7 h-7 object-contain rounded-lg" onerror="this.style.display='none'">
+                            @else
+                                <div class="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            @endif
                             <span class="text-sm font-bold text-gray-900 dark:text-white">Cellcom</span>
                         </div>
                         {{-- Page Title from $header slot --}}
@@ -363,9 +367,9 @@
                 {{-- Mobile Logo --}}
                 <div class="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
                     <div class="flex items-center gap-3">
-                        @if ($appLogo)
+                        @if ($appLogoUrl)
                             <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-                                <img src="{{ asset('storage/' . $appLogo) }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
+                                <img src="{{ $appLogoUrl }}" alt="Logo" class="w-full h-full object-contain rounded border-none" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Cellcom&background=0D8ABC&color=fff';">
                             </div>
                         @else
                             <div class="w-9 h-9 flex-shrink-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-md">
