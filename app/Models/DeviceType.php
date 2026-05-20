@@ -33,4 +33,5 @@ class DeviceType extends Model
     public function categoryQuestions()
     {
         return $this->hasMany(CategoryQuestion::class);
-    }}
+    }
+}

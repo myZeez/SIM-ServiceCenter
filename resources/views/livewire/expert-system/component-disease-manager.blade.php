@@ -52,6 +52,10 @@
 
                         <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Solusi / Tindakan:</p>
                         <p class="text-sm text-green-600 dark:text-green-400 font-medium mb-4 italic">{{ \Illuminate\Support\Str::limit($disease->solution, 60) }}</p>
+                        <div class="mb-4 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                            <span>Kategori engine: {{ $disease->category ?: '-' }}</span>
+                            <span class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ $disease->symptoms_count }} gejala</span>
+                        </div>
 
                         <div class="mt-auto bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded border border-gray-100 dark:border-gray-700 mb-4 text-center">
                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Estimasi Biaya Perbaikan</p>

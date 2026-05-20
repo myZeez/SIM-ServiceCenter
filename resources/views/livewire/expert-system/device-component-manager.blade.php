@@ -31,6 +31,11 @@
                     <span class="block sm:inline">{{ session('message') }}</span>
                 </div>
             @endif
+            @if (session()->has('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Loop through Device Components -->
@@ -50,6 +55,21 @@
 
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 truncate">{{ $component->name }}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 flex-grow mb-4">{{ \Illuminate\Support\Str::limit($component->description, 100) }}</p>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs mb-4">
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $component->diseases_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Kerusakan</span>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $component->symptoms_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Gejala</span>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $component->category_questions_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Tanya</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Kategori engine: {{ $component->engine_category ?: '-' }}</p>
 
                         <div class="border-t border-gray-200 dark:border-gray-700 mt-auto pt-4 flex justify-between">
                             <a href="{{ route('expert-system.diseases', $component->id) }}" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">
@@ -109,6 +129,12 @@
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi (Sub-text)</label>
                                     <textarea wire:model="description" rows="3" placeholder="Contoh: Blank, bergaris, pecah, berkedip" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"></textarea>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori Engine Diagnosis</label>
+                                    <input type="text" wire:model="engine_category" placeholder="Contoh: Display, Power, Keyboard" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Dipakai untuk menghubungkan gejala, pertanyaan, rule, dan alur diagnosis.</p>
+                                    @error('engine_category') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="mt-8 flex flex-col sm:flex-row gap-3 pt-5 border-t border-gray-200 dark:border-gray-700">
                                     <button type="submit" class="w-full sm:w-1/2 flex justify-center items-center rounded-xl border border-transparent shadow-md hover:shadow-lg px-6 py-3 bg-primary-600 text-base font-bold text-white hover:bg-primary-700 transition-all sm:order-2">

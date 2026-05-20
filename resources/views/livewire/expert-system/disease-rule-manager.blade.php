@@ -9,6 +9,11 @@
             <div>
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">Aturan Gejala: {{ $disease->name }}</h2>
                 <p class="page-header-subtitle mt-1 text-gray-600 dark:text-gray-400">Tambahkan pertanyaan/gejala yang akan mengarahkan pelanggan pada penyakit ini.</p>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                    <span class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Unit: {{ $disease->deviceType->name ?? $disease->device_type }}</span>
+                    <span class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Komponen: {{ $disease->component->name ?? '-' }}</span>
+                    <span class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Kategori engine: {{ $disease->component->engine_category ?? $disease->category }}</span>
+                </div>
             </div>
         </div>
     </x-slot>
@@ -45,7 +50,7 @@
                 </div>
 
                 <ul class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($disease->symptoms as $symptom)
+                    @forelse($relatedSymptoms as $symptom)
                         <li class="px-4 py-4 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                             <div class="flex items-start gap-4 flex-1">
                                 <div class="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 p-2 rounded-full mt-1">
@@ -53,9 +58,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                     </svg>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $symptom->name }}</p>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">Pertanyaan bot: "{{ $symptom->follow_up_question ?? 'Apakah indikator ini terlihat?' }}"</p>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $symptom->name }}</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ $symptom->code }} - {{ $symptom->category }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">Pertanyaan bot: "{{ $symptom->follow_up_question ?? 'Apakah indikator ini terlihat?' }}"</p>
                                     <div class="mt-2 text-xs font-semibold px-2 py-1 bg-{{ $symptom->pivot->cf_value >= 0.8 ? 'green' : ($symptom->pivot->cf_value >= 0.5 ? 'yellow' : 'red') }}-100 dark:bg-{{ $symptom->pivot->cf_value >= 0.8 ? 'green' : ($symptom->pivot->cf_value >= 0.5 ? 'yellow' : 'red') }}-900/30 text-{{ $symptom->pivot->cf_value >= 0.8 ? 'green' : ($symptom->pivot->cf_value >= 0.5 ? 'yellow' : 'red') }}-800 dark:text-{{ $symptom->pivot->cf_value >= 0.8 ? 'green' : ($symptom->pivot->cf_value >= 0.5 ? 'yellow' : 'red') }}-400 rounded inline-block">
                                         Kemungkinan Benar (CF) : {{ $symptom->pivot->cf_value * 100 }}%
                                     </div>
@@ -122,11 +128,63 @@
                                 </div>
 
                                 <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Kata Kunci Keluhan</label>
+                                    <input type="text" wire:model="keywords" placeholder="Contoh: bergaris, garis horizontal, layar belang" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pisahkan dengan koma. Ini membantu pencocokan keluhan user.</p>
+                                    @error('keywords') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
                                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Pertanyaan Konfirmasi ke User (Sistem Pakar)</label>
                                     <textarea wire:model="follow_up_question" rows="2" placeholder="Contoh: Apakah layar laptop Anda memunculkan garis warna-warni secara horizontal?" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"></textarea>
                                     @error('follow_up_question') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                                 </div>
                             @endif
+
+                            <div class="border-t dark:border-gray-700 pt-4 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <label class="flex items-start gap-3 p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                        <input type="checkbox" wire:model="sync_problem_entry" class="mt-1 form-checkbox h-4 w-4 text-primary-600 rounded dark:bg-gray-900 dark:border-gray-700">
+                                        <span>
+                                            <span class="block text-sm font-semibold text-gray-800 dark:text-gray-200">Tampilkan di pilihan masalah</span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400">Masuk ke problems_data komponen agar muncul di halaman diagnosis.</span>
+                                        </span>
+                                    </label>
+                                    <label class="flex items-start gap-3 p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                        <input type="checkbox" wire:model="sync_category_question" class="mt-1 form-checkbox h-4 w-4 text-primary-600 rounded dark:bg-gray-900 dark:border-gray-700">
+                                        <span>
+                                            <span class="block text-sm font-semibold text-gray-800 dark:text-gray-200">Buat pertanyaan diagnosis</span>
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400">Masuk ke category_questions untuk alur tanya jawab.</span>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Label Pilihan Masalah</label>
+                                        <input type="text" wire:model="problem_label" placeholder="Kosongkan untuk memakai nama gejala" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                        @error('problem_label') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Deskripsi Pilihan Masalah</label>
+                                        <input type="text" wire:model="problem_description" placeholder="Contoh: Muncul garis vertikal/horizontal" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                        @error('problem_description') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Pertanyaan di Alur Diagnosis</label>
+                                        <input type="text" wire:model="question_text" placeholder="Kosongkan untuk memakai pertanyaan konfirmasi" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                        @error('question_text') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Keyword Jawaban Positif</label>
+                                        <input type="text" wire:model="expected_keyword" placeholder="ya,iya,ada,benar" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md">
+                                        @error('expected_keyword') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                            </div>
 
                             <div class="border-t dark:border-gray-700 pt-4">
                                 <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tingkat Keyakinan Gejala (Certainty Factor)</label>

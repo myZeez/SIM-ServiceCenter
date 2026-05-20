@@ -12,8 +12,14 @@ class DeviceComponent extends Model
         'slug',
         'icon',
         'description',
+        'engine_category',
+        'problems_data',
         'is_active',
         'order_column',
+    ];
+
+    protected $casts = [
+        'problems_data' => 'array',
     ];
 
     public function deviceType()
@@ -34,4 +40,5 @@ class DeviceComponent extends Model
     public function categoryQuestions()
     {
         return $this->hasMany(CategoryQuestion::class);
-    }}
+    }
+}

@@ -21,6 +21,11 @@
                     <span class="block sm:inline">{{ session('message') }}</span>
                 </div>
             @endif
+            @if (session()->has('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Loop through Device Types -->
@@ -40,12 +45,31 @@
 
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 truncate">{{ $type->name }}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 flex-grow mb-4">{{ \Illuminate\Support\Str::limit($type->description, 100) }}</p>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs mb-4">
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $type->components_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Komponen</span>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $type->diseases_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Kerusakan</span>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded px-2 py-2">
+                                <span class="block font-bold text-gray-900 dark:text-white">{{ $type->symptoms_count }}</span>
+                                <span class="text-gray-500 dark:text-gray-400">Gejala</span>
+                            </div>
+                        </div>
 
                         <div class="border-t border-gray-200 dark:border-gray-700 mt-auto pt-4 flex justify-between">
                             <a href="{{ route('expert-system.components', $type->id) }}" class="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300">
                                 Kelola Komponen &rarr;
                             </a>
-                            <div class="flex gap-4">
+                            <div class="flex gap-4 items-center">
+                                <button wire:click="syncLegacyData({{ $type->id }})" title="Sinkronkan data lama ke komponen" class="text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-3M19 5A9 9 0 005 8" />
+                                    </svg>
+                                </button>
                                 <button wire:click="edit({{ $type->id }})" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

@@ -41,7 +41,9 @@ class ComponentDiseaseManager extends Component
 
     public function loadData()
     {
-        $this->diseases = Disease::where('device_component_id', $this->component->id)->get();
+        $this->diseases = Disease::where('device_component_id', $this->component->id)
+            ->withCount('symptoms')
+            ->get();
     }
 
     public function openModal()
@@ -81,7 +83,8 @@ class ComponentDiseaseManager extends Component
             'level' => $this->level,
             'device_type_id' => $this->component->device_type_id,
             'device_component_id' => $this->component->id,
-            'category' => $this->component->slug, // Sinkronisasi field lama
+            'category' => $this->component->engine_category ?: $this->component->slug,
+            'device_type' => $this->component->deviceType->slug,
         ];
 
         if ($this->isEdit) {
@@ -92,8 +95,6 @@ class ComponentDiseaseManager extends Component
             $prefix = 'D-' . strtoupper(substr($this->component->deviceType->slug, 0, 3)) . '-' . strtoupper(substr($this->component->slug, 0, 3));
             $count = Disease::where('device_component_id', $this->component->id)->count() + 1;
             $data['code'] = $prefix . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
-            $data['device_type'] = $this->component->deviceType->slug; // Sinkronisasi dengan field type lama
-
             Disease::create($data);
             session()->flash('message', 'Data kerusakan berhasil ditambahkan.');
         }

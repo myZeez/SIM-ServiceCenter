@@ -16,6 +16,8 @@ class CategoryQuestion extends Model
         'order',
         'question_type',
         'options',
+        'device_type_id',
+        'device_component_id',
     ];
 
     protected $casts = [

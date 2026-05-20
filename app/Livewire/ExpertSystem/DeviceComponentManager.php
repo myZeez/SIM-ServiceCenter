@@ -22,11 +22,13 @@ class DeviceComponentManager extends Component
     public $name;
     public $icon;
     public $description;
+    public $engine_category;
 
     protected $rules = [
         'name' => 'required|string|max:255',
         'icon' => 'nullable|string|max:255',
         'description' => 'nullable|string',
+        'engine_category' => 'nullable|string|max:255',
     ];
 
     public function mount($device_type_id)
@@ -38,6 +40,7 @@ class DeviceComponentManager extends Component
     public function loadData()
     {
         $this->components = DeviceComponent::where('device_type_id', $this->deviceType->id)
+            ->withCount(['diseases', 'symptoms', 'categoryQuestions'])
             ->orderBy('order_column')->get();
     }
 
@@ -58,6 +61,7 @@ class DeviceComponentManager extends Component
         $this->name = $component->name;
         $this->icon = $component->icon;
         $this->description = $component->description;
+        $this->engine_category = $component->engine_category;
 
         $this->showModal = true;
     }
@@ -72,12 +76,15 @@ class DeviceComponentManager extends Component
             'slug' => Str::slug($this->name),
             'icon' => $this->icon,
             'description' => $this->description,
+            'engine_category' => $this->engine_category ?: Str::headline(Str::slug($this->name, ' ')),
         ];
 
         if ($this->isEdit) {
             DeviceComponent::findOrFail($this->editId)->update($data);
             session()->flash('message', 'Komponen berhasil diperbarui.');
         } else {
+            $data['order_column'] = DeviceComponent::where('device_type_id', $this->deviceType->id)->max('order_column') + 1;
+            $data['problems_data'] = [];
             DeviceComponent::create($data);
             session()->flash('message', 'Komponen berhasil ditambahkan.');
         }
@@ -89,6 +96,11 @@ class DeviceComponentManager extends Component
     public function delete($id)
     {
         $component = DeviceComponent::findOrFail($id);
+        if ($component->diseases()->exists() || $component->symptoms()->exists()) {
+            session()->flash('error', 'Komponen tidak bisa dihapus karena masih memiliki kerusakan atau gejala.');
+            return;
+        }
+
         $component->delete();
         session()->flash('message', 'Komponen berhasil dihapus.');
         $this->loadData();
@@ -114,6 +126,7 @@ class DeviceComponentManager extends Component
         $this->name = '';
         $this->icon = '';
         $this->description = '';
+        $this->engine_category = '';
     }
 
     public function render()
